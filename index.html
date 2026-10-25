@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Attendance System</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f6fc;
+      color: #172554;
+    }
+    header {
+      background: #142b5f;
+      color: white;
+      padding: 22px 16px;
+    }
+    header h2 { margin: 0 0 8px; }
+    header p { margin: 0; color: #dbeafe; }
+    main { max-width: 700px; margin: auto; padding: 16px; }
+    .card {
+      background: white;
+      padding: 18px;
+      margin: 14px 0;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px #17255412;
+    }
+    label { display: block; margin: 12px 0 6px; }
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat { background: #eff6ff; padding: 14px; border-radius: 10px; }
+    .stat strong { display: block; font-size: 23px; margin-top: 8px; }
+    #message { color: #166534; font-weight: bold; }
+    @media(max-width: 400px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>🎓 AI Smart Attendance</h2>
+    <p>College Attendance Management System</p>
+  </header>  <main>
+    <section class="card">
+      <h3>Login</h3>
+      <label for="role">Login as</label>
+      <select id="role">
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+      </select>
+      <label for="user">User ID</label>
+      <input id="user" placeholder="Enter your ID">
+      <button onclick="login()">Continue</button>
+      <p id="message"></p>
+      <small>Demo screen only. Secure login will be added later.</small>
+    </section><section class="card">
+  <h3>Attendance Dashboard</h3>
+  <div class="grid">
+    <div class="stat">Total Students<strong id="students">0</strong></div>
+    <div class="stat">Attendance Today<strong id="attendance">0</strong></div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Quick Features</h3>
+  <p>📅 Weekly Timetable</p>
+  <p>📷 QR Code Attendance</p>
+  <p>📊 Attendance Reports</p>
+  <p>📥 CSV Download</p>
+  <p>🤖 Attendance Analytics</p>
+  <p><small>These features will be implemented in later steps.</small></p>
+</section>
+
+  </main>  <script>
+    function login() {
+      const role = document.getElementById('role').value;
+      const user = document.getElementById('user').value.trim();
+      document.getElementById('message').textContent = user
+        ? role.charAt(0).toUpperCase() + role.slice(1) +
+          ' demo selected for ID: ' + user
+        : 'Please enter your User ID.';
+    }
+  </script></body>
+</html>

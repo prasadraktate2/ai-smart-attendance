@@ -1,17 +1,112 @@
-<section class="card">
-  <h3>Attendance Dashboard</h3>
-  <div class="grid">
-    <div class="stat">Total Students<strong id="students">0</strong></div>
-    <div class="stat">Attendance Today<strong id="attendance">0</strong></div>
-  </div>
+
+<section class="card" id="weekly-timetable">
+  <h3>📅 Weekly Timetable</h3>
+
+  <label for="daySelect">Select Day:</label>
+  <select id="daySelect">
+    <option>Monday</option>
+    <option>Tuesday</option>
+    <option>Wednesday</option>
+    <option>Thursday</option>
+    <option>Friday</option>
+    <option>Saturday</option>
+  </select>
+
+  <div id="lectureList"></div>
+  <p id="attendanceStatus"></p>
 </section>
 
-<section class="card">
-  <h3>Quick Features</h3>
-  <p>📅 Weekly Timetable</p>
-  <p>📷 QR Code Attendance</p>
-  <p>📊 Attendance Reports</p>
-  <p>📥 CSV Download</p>
-  <p>🤖 Attendance Analytics</p>
-  <p><small>These features will be implemented in later steps.</small></p>
-</section>
+<style>
+#weekly-timetable select,
+#weekly-timetable button {
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 8px;
+}
+
+.lecture-card {
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+}
+</style>
+
+<script>
+const timetable = {
+  Monday: [
+    { subject: "Chemistry", time: "10:00–10:55" },
+    { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
+    { subject: "Verbal Communication Skills", time: "12:30–14:30" },
+    { subject: "Chemistry", time: "14:50–16:50" }
+  ],
+
+  Tuesday: [
+    { subject: "Environmental Science", time: "10:00–10:55" },
+    { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
+    { subject: "Computational Thinking & Problem Solving", time: "12:30–14:30" },
+    { subject: "Computational Thinking & Problem Solving", time: "14:50–15:50" },
+    { subject: "Physics", time: "15:50–16:50" }
+  ],
+
+  Wednesday: [
+    { subject: "Communication", time: "10:00–10:55" },
+    { subject: "Chemistry", time: "10:55–11:50" },
+    { subject: "Computational Thinking & Problem Solving", time: "12:30–13:30" },
+    { subject: "Engineering Mathematics-I", time: "13:30–14:30" },
+    { subject: "Yoga and Meditation", time: "14:30–16:50" }
+  ],
+
+  Thursday: [
+    { subject: "Physics", time: "Confirm timing" },
+    { subject: "Environmental Science", time: "10:55–11:50" },
+    { subject: "Physics", time: "12:30–14:30" },
+    { subject: "Computer Workshop Practice", time: "14:50–16:50" }
+  ],
+
+  Friday: [
+    { subject: "Engineering Mathematics-I", time: "10:00–10:55" },
+    { subject: "Computational Thinking & Problem Solving", time: "10:55–11:50" },
+    { subject: "Computer Workshop Practice", time: "12:30–14:30" },
+    { subject: "Introduction to AI Tools", time: "14:50–16:50" }
+  ],
+
+  Saturday: [
+    { subject: "Subject to be added", time: "Confirm timing" }
+  ]
+};
+
+const daySelect = document.getElementById("daySelect");
+const lectureList = document.getElementById("lectureList");
+const attendanceStatus = document.getElementById("attendanceStatus");
+
+function showTimetable() {
+  const day = daySelect.value;
+  lectureList.replaceChildren();
+
+  timetable[day].forEach((lecture, index) => {
+    const card = document.createElement("div");
+    card.className = "lecture-card";
+
+    const heading = document.createElement("h4");
+    heading.textContent = `${index + 1}. ${lecture.subject}`;
+
+    const time = document.createElement("p");
+    time.textContent = `Time: ${lecture.time}`;
+
+    const button = document.createElement("button");
+    button.textContent = "Open Attendance";
+
+    button.addEventListener("click", () => {
+      attendanceStatus.textContent =
+        `Selected: ${day} | Lecture ${index + 1} | ${lecture.subject}`;
+    });
+
+    card.append(heading, time, button);
+    lectureList.appendChild(card);
+  });
+}
+
+daySelect.addEventListener("change", showTimetable);
+showTimetable();
+</script>

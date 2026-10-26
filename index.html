@@ -1,246 +1,481 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="mr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Attendance System</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <style>
-body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:16px;color:#172033}
+body{font-family:Arial,sans-serif;background:#f1f5f9;padding:14px;color:#172033}
+.card{background:white;padding:16px;margin:12px 0;border-radius:12px;box-shadow:0 2px 8px #0001}
 h2,h3{color:#2457a7}
-.card{background:white;padding:16px;margin:14px 0;border-radius:12px;box-shadow:0 2px 8px #0001}
-input,select,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:7px;font-size:15px}
+input,select,button{width:100%;padding:12px;margin:6px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:7px}
 button{background:#2457a7;color:white;border:0;cursor:pointer}
-.lecture{padding:12px;border:1px solid #ddd;border-radius:8px;margin:10px 0}
-.lecture.selected{border:2px solid #2457a7;background:#eef4ff}
-.stat{background:#eaf1ff;padding:12px;border-radius:8px;margin:5px 0}
-#qrBox{text-align:center;margin:16px auto;display:flex;justify-content:center}
-small{color:#555}
+.hidden{display:none!important}
+#qrcode{display:flex;justify-content:center;margin:16px}
+.note{font-size:13px;color:#526078}
 </style>
 </head>
 <body>
-
 <h2>🎓 AI Attendance System</h2>
 
-<section class="card">
-<h3>📊 Dashboard</h3>
-<div class="stat">Total Recorded Attendance: <strong id="total">0</strong></div>
-<div class="stat">Selected Day: <strong id="todayDay">Monday</strong></div>
+<section class="card" id="auth">
+<h3>Login</h3>
+<select id="loginType">
+<option value="student">Student Login (Student ID)</option>
+<option value="staff">Staff Login (Email)</option>
+</select>
+<input id="loginId" placeholder="Student ID किंवा Staff Email" autocomplete="username">
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+<button id="login">Login</button>
+<p id="message"></p>
+<p class="note">Student Registration फक्त Staff करू शकतो.</p>
 </section>
 
-<section class="card">
-<h3>📅 Weekly Timetable</h3>
-<label for="day">Select Day</label>
+<section class="card hidden" id="app">
+<h3 id="welcome">Welcome</h3>
+<p id="profile"></p>
+<button id="logout">Logout</button>
+
+<div id="staffPanel" class="hidden">
+<hr>
+<h3>👨‍🏫 Staff — Create Student Account</h3>
+<input id="studentName" placeholder="विद्यार्थ्याचे पूर्ण नाव">
+<input id="newStudentId" placeholder="नवीन Student ID (उदा. STU001)">
+<input id="newStudentPassword" type="password" placeholder="विद्यार्थ्यासाठी Password (किमान 6 अक्षरे)">
+<button id="createStudent">Create Student Account</button>
+<p id="createStatus"></p>
+
+<hr>
+<h3>📚 Create Lecture QR</h3>
+<input id="subject" placeholder="Subject name">
 <select id="day">
 <option>Monday</option><option>Tuesday</option>
 <option>Wednesday</option><option>Thursday</option>
 <option>Friday</option><option>Saturday</option>
 </select>
-<div id="lectures"></div>
+<input id="lecture" type="number" min="1" placeholder="Lecture number">
+<button id="createQR">Create / Refresh QR (10 seconds)</button>
+<div id="qrcode"></div>
+<p id="qrStatus"></p>
+
+<hr>
+<h3>📊 Attendance Report</h3>
+<button id="report">Load Attendance Report</button>
+<button id="csv">Download CSV</button>
+<div id="reportList"></div>
+</div>
+
+<div id="studentPanel" class="hidden">
+<hr>
+<h3>🧑‍🎓 Student Attendance</h3>
+<p>Staff ने दिलेला QR Code स्कॅन कर.</p>
+<div id="reader"></div>
+<button id="startScanner">Start QR Scanner</button>
+<button id="stopScanner">Stop Scanner</button>
+<p id="scanStatus"></p>
+</div>
 </section>
 
-<section class="card">
-<h3>🧑‍🎓 Lecture Attendance</h3>
-<p id="selected">Select a lecture first.</p>
-<label for="student">Student ID</label>
-<input id="student" placeholder="Enter Student ID">
-<button id="present">Mark Present</button>
-<button id="view">View This Lecture's Attendance</button>
-<div id="records"></div>
-</section>
+<script type="module">
+import { initializeApp, deleteApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-<section class="card">
-<h3>📷 QR Code Attendance</h3>
-<p id="qrInfo">Select a lecture first.</p>
-<div id="qrBox">QR code will appear here</div>
-<p id="timer">Refresh interval: 10 seconds</p>
-<button id="generate">Generate / Refresh QR</button>
-<p><small>Demo QR only. Server-side token validation is required for secure attendance.</small></p>
-</section>
+import {
+ getAuth, signInWithEmailAndPassword, signOut,
+ onAuthStateChanged, createUserWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-<section class="card">
-<h3>📥 Attendance CSV Download</h3>
-<button id="csv">Download CSV Report</button>
-</section>
+import {
+ getFirestore, doc, setDoc, getDoc, addDoc,
+ collection, getDocs, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script>
-const timetable={
-Monday:[
-["Chemistry","10:00-10:55"],
-["Engineering Mathematics-I","10:55-11:50"],
-["Verbal Communication Skills","12:30-14:30"],
-["Chemistry","14:50-16:50"]],
-Tuesday:[
-["Environmental Science","10:00-10:55"],
-["Engineering Mathematics-I","10:55-11:50"],
-["Computational Thinking & Problem Solving","12:30-14:30"],
-["Computational Thinking & Problem Solving","14:50-15:50"],
-["Physics","15:50-16:50"]],
-Wednesday:[
-["Communication","10:00-10:55"],
-["Chemistry","10:55-11:50"],
-["Computational Thinking & Problem Solving","12:30-13:30"],
-["Engineering Mathematics-I","13:30-14:30"],
-["Yoga and Meditation","14:30-16:50"]],
-Thursday:[
-["Physics","Confirm timing"],
-["Environmental Science","10:55-11:50"],
-["Physics","12:30-14:30"],
-["Computer Workshop Practice","14:50-16:50"]],
-Friday:[
-["Engineering Mathematics-I","10:00-10:55"],
-["Computational Thinking & Problem Solving","10:55-11:50"],
-["Computer Workshop Practice","12:30-14:30"],
-["Introduction to AI Tools","14:50-16:50"]],
-Saturday:[
-["Subject to be added","Confirm timing"]]
+// IMPORTANT: Replace these with your real Firebase Web App config.
+const firebaseConfig = {
+ apiKey: "YOUR_API_KEY",
+ authDomain: "YOUR_PROJECT.firebaseapp.com",
+ projectId: "YOUR_PROJECT_ID",
+ storageBucket: "YOUR_PROJECT.firebasestorage.app",
+ messagingSenderId: "YOUR_SENDER_ID",
+ appId: "YOUR_APP_ID"
 };
 
-const $=id=>document.getElementById(id);
-let selectedIndex=null;
-let qrInterval=null;
-let qrCount=10;
-let qrExpiry=0;
-let activeToken=null;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-function readData(){
- try{return JSON.parse(localStorage.getItem("attendanceData")||"{}")}
- catch{return {}}
-}
-function writeData(data){
- localStorage.setItem("attendanceData",JSON.stringify(data));
-}
-function lectureKey(){
- return $("day").value+"-lecture-"+(selectedIndex+1);
-}
-function render(){
- selectedIndex=null;
- $("todayDay").textContent=$("day").value;
- $("selected").textContent="Select a lecture first.";
- $("lectures").replaceChildren();
- $("records").replaceChildren();
- $("qrBox").textContent="Select a lecture and generate a QR.";
- $("qrInfo").textContent="Select a lecture first.";
- if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
- activeToken=null;
+const $ = id => document.getElementById(id);
+let currentUser = null;
+let currentRole = null;
+let currentProfile = {};
+let scanner = null;
+let scannerRunning = false;
+let qrTimer = null;
+let reportRows = [];
+let makingStudent = false;
 
- timetable[$("day").value].forEach((item,i)=>{
-  const card=document.createElement("div");
-  card.className="lecture";
-  const title=document.createElement("h4");
-  title.textContent=(i+1)+". "+item[0];
-  const time=document.createElement("p");
-  time.textContent="Time: "+item[1];
-  const btn=document.createElement("button");
-  btn.textContent="Select Lecture";
-  btn.onclick=()=>{
-   selectedIndex=i;
-   document.querySelectorAll(".lecture").forEach(x=>x.classList.remove("selected"));
-   card.classList.add("selected");
-   $("selected").textContent=$("day").value+" | Lecture "+(i+1)+" | "+item[0];
-   $("records").replaceChildren();
-   $("qrInfo").textContent="Selected: "+item[0];
-   $("qrBox").textContent="Press Generate QR Code.";
-   if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
-   activeToken=null;
-  };
-  card.append(title,time,btn);
-  $("lectures").appendChild(card);
- });
- updateTotal();
+function showMessage(id, text) {
+ $(id).textContent = text;
 }
-function updateTotal(){
- const data=readData();
- let total=0;
- Object.values(data).forEach(arr=>total+=arr.length);
- $("total").textContent=total;
-}
-$("day").onchange=render;
 
-$("present").onclick=()=>{
- const id=$("student").value.trim();
- if(selectedIndex===null){alert("Please select a lecture first.");return;}
- if(!id){alert("Enter Student ID.");return;}
- const data=readData(),key=lectureKey();
- if(!data[key])data[key]=[];
- if(data[key].some(x=>x.studentId===id)){
-  alert("Attendance already recorded for this lecture.");return;
+// Convert a Student ID to a Firebase-compatible sign-in email.
+// Students enter their ID, not this generated email.
+function studentLoginEmail(id) {
+ return id.trim().toLowerCase() + "@students.attendance.app";
+}
+
+$("loginType").onchange = () => {
+ $("loginId").value = "";
+ $("loginId").placeholder =
+   $("loginType").value === "student"
+   ? "Student ID (उदा. STU001)"
+   : "Staff Email";
+};
+
+$("login").onclick = async () => {
+ const id = $("loginId").value.trim();
+ const password = $("password").value;
+
+ if (!id || !password) {
+   showMessage("message", "ID/Email आणि Password भरा.");
+   return;
  }
- data[key].push({
-  studentId:id,status:"Present",
-  recordedAt:new Date().toISOString()
- });
- try{
-  writeData(data);
-  alert("Attendance saved in this browser.");
-  updateTotal();
- }catch(e){alert("Could not save attendance.");}
+
+ try {
+   const email = $("loginType").value === "student"
+     ? studentLoginEmail(id)
+     : id;
+
+   const result = await signInWithEmailAndPassword(auth, email, password);
+   const profileSnap = await getDoc(doc(db, "users", result.user.uid));
+
+   if (!profileSnap.exists()) {
+     await signOut(auth);
+     throw new Error("Profile सापडली नाही. Staff शी संपर्क कर.");
+   }
+
+   const role = profileSnap.data().role;
+   const selected = $("loginType").value;
+
+   if ((selected === "staff" && role !== "teacher") ||
+       (selected === "student" && role !== "student")) {
+     await signOut(auth);
+     throw new Error("या Login प्रकारासाठी हे खाते मान्य नाही.");
+   }
+
+   showMessage("message", "");
+ } catch (e) {
+   showMessage("message", "Login failed: " + e.message);
+ }
 };
 
-$("view").onclick=()=>{
- if(selectedIndex===null){alert("Select a lecture first.");return;}
- const data=readData(),arr=data[lectureKey()]||[];
- $("records").replaceChildren();
- if(!arr.length){$("records").textContent="No records yet.";return;}
- arr.forEach(x=>{
-  const p=document.createElement("p");
-  p.textContent=x.studentId+" — "+x.status;
-  $("records").appendChild(p);
- });
+$("logout").onclick = async () => {
+ await stopScanner();
+ if (qrTimer) clearInterval(qrTimer);
+ qrTimer = null;
+ await signOut(auth);
 };
 
-function makeQR(){
- if(selectedIndex===null){alert("Select a lecture first.");return;}
- if(typeof QRCode==="undefined"){
-  alert("QR library did not load. Check internet connection.");return;
+onAuthStateChanged(auth, async user => {
+ currentUser = user;
+ $("auth").classList.toggle("hidden", !!user);
+ $("app").classList.toggle("hidden", !user);
+
+ if (!user) {
+   currentRole = null;
+   currentProfile = {};
+   return;
  }
- if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
- function refresh(){
-  activeToken=(crypto.randomUUID?crypto.randomUUID():
-   Date.now()+"-"+Math.random().toString(36).slice(2));
-  const item=timetable[$("day").value][selectedIndex];
-  const payload=JSON.stringify({
-   day:$("day").value,
-   lecture:selectedIndex+1,
-   subject:item[0],
-   token:activeToken,
-   expiresAt:Date.now()+10000
-  });
-  $("qrBox").replaceChildren();
-  new QRCode($("qrBox"),{text:payload,width:220,height:220});
-  qrExpiry=Date.now()+10000;
-  qrCount=10;
-  $("qrInfo").textContent=$("day").value+" — "+item[0];
+
+ try {
+   const snap = await getDoc(doc(db, "users", user.uid));
+   if (!snap.exists()) {
+     showMessage("message", "User profile सापडली नाही.");
+     await signOut(auth);
+     return;
+   }
+
+   currentProfile = snap.data();
+   currentRole = currentProfile.role;
+
+   $("welcome").textContent = "Welcome " +
+     (currentProfile.name || user.email || "User");
+
+   $("profile").textContent = currentRole === "student"
+     ? "Student ID: " + (currentProfile.studentId || "") +
+       " | Name: " + (currentProfile.name || "")
+     : "Staff Login: " + (user.email || "");
+
+   $("staffPanel").classList.toggle("hidden", currentRole !== "teacher");
+   $("studentPanel").classList.toggle("hidden", currentRole !== "student");
+
+   if (currentRole !== "teacher" && qrTimer) {
+     clearInterval(qrTimer);
+     qrTimer = null;
+   }
+ } catch (e) {
+   showMessage("message", "Profile error: " + e.message);
  }
- refresh();
- qrInterval=setInterval(()=>{
-  const remaining=Math.max(0,Math.ceil((qrExpiry-Date.now())/1000));
-  $("timer").textContent="QR refresh: "+remaining+" seconds";
-  if(Date.now()>=qrExpiry)refresh();
- },250);
+});
+
+// STAFF CREATES STUDENT ACCOUNTS.
+// A secondary Firebase Auth instance prevents logging the staff member out.
+$("createStudent").onclick = async () => {
+ if (currentRole !== "teacher" || makingStudent) return;
+
+ const name = $("studentName").value.trim();
+ const studentId = $("newStudentId").value.trim();
+ const studentPassword = $("newStudentPassword").value;
+
+ if (!name || !studentId || !studentPassword) {
+   showMessage("createStatus", "नाव, Student ID आणि Password भरा.");
+   return;
+ }
+
+ if (studentPassword.length < 6) {
+   showMessage("createStatus", "Password किमान 6 अक्षरांचा हवा.");
+   return;
+ }
+
+ if (!/^[a-zA-Z0-9_-]{3,30}$/.test(studentId)) {
+   showMessage("createStatus",
+     "Student ID मध्ये इंग्रजी अक्षरे, अंक, _ किंवा - वापर. किमान 3 अक्षरे.");
+   return;
+ }
+
+ makingStudent = true;
+ $("createStudent").disabled = true;
+ let secondaryApp = null;
+
+ try {
+   // Check whether this Student ID already exists.
+   const studentKey = studentId.toLowerCase();
+   const idSnap = await getDoc(doc(db, "studentIds", studentKey));
+
+   if (idSnap.exists()) {
+     throw new Error("हा Student ID आधीच वापरला आहे.");
+   }
+
+   secondaryApp = initializeApp(firebaseConfig, "student-creator-" + Date.now());
+   const secondaryAuth = getAuth(secondaryApp);
+
+   const email = studentLoginEmail(studentId);
+   const credential = await createUserWithEmailAndPassword(
+     secondaryAuth, email, studentPassword
+   );
+
+   // Only the authenticated staff account writes these records.
+   await setDoc(doc(db, "users", credential.user.uid), {
+     name,
+     studentId,
+     email,
+     role: "student",
+     createdBy: currentUser.uid,
+     createdAt: Timestamp.now()
+   });
+
+   await setDoc(doc(db, "studentIds", studentKey), {
+     uid: credential.user.uid,
+     studentId,
+     createdBy: currentUser.uid
+   });
+
+   showMessage("createStatus",
+     "Student account तयार झाले! नाव: " + name +
+     " | ID: " + studentId + ". ही माहिती विद्यार्थ्याला दे.");
+
+   $("studentName").value = "";
+   $("newStudentId").value = "";
+   $("newStudentPassword").value = "";
+ } catch (e) {
+   showMessage("createStatus", "Account तयार झाले नाही: " + e.message);
+ } finally {
+   if (secondaryApp) {
+     try {
+       await signOut(getAuth(secondaryApp));
+       await deleteApp(secondaryApp);
+     } catch {}
+   }
+   makingStudent = false;
+   $("createStudent").disabled = false;
+ }
+};
+
+// STAFF CREATES A QR SESSION, REFRESHED EVERY 10 SECONDS.
+$("createQR").onclick = async () => {
+ if (currentRole !== "teacher") return;
+
+ const subject = $("subject").value.trim();
+ const day = $("day").value;
+ const lecture = Number($("lecture").value);
+
+ if (!subject || !Number.isInteger(lecture) || lecture < 1) {
+   showMessage("qrStatus", "Subject आणि Lecture number भरा.");
+   return;
+ }
+
+ if (typeof QRCode === "undefined") {
+   showMessage("qrStatus", "QR library load झाली नाही.");
+   return;
+ }
+
+ if (qrTimer) clearInterval(qrTimer);
+ $("qrcode").replaceChildren();
+
+ const createSession = async () => {
+   try {
+     const session = await addDoc(collection(db, "sessions"), {
+       subject, day, lecture,
+       teacherUid: currentUser.uid,
+       expiresAt: Timestamp.fromMillis(Date.now() + 10000)
+     });
+
+     $("qrcode").replaceChildren();
+     new QRCode($("qrcode"), {
+       text: JSON.stringify({sessionId: session.id}),
+       width: 220, height: 220
+     });
+
+     showMessage("qrStatus",
+       subject + " | " + day + " | Lecture " + lecture +
+       " — QR दर 10 सेकंदांनी बदलतो.");
+   } catch (e) {
+     showMessage("qrStatus", "QR error: " + e.message);
+     if (qrTimer) clearInterval(qrTimer);
+   }
+ };
+
+ await createSession();
+ qrTimer = setInterval(createSession, 10000);
+};
+
+$("startScanner").onclick = async () => {
+ if (currentRole !== "student" || scannerRunning) return;
+
+ try {
+   scanner = new Html5Qrcode("reader");
+   await scanner.start(
+     {facingMode: "environment"},
+     {fps: 10, qrbox: {width: 220, height: 220}},
+     async text => {
+       await stopScanner();
+       await markAttendance(text);
+     },
+     () => {}
+   );
+   scannerRunning = true;
+   showMessage("scanStatus", "QR Scanner सुरू आहे.");
+ } catch (e) {
+   showMessage("scanStatus",
+     "Camera सुरू होत नाही. Camera permission दे आणि HTTPS वेबसाइट वापर.");
+ }
+};
+
+async function stopScanner() {
+ if (scanner && scannerRunning) {
+   try { await scanner.stop(); } catch {}
+   scannerRunning = false;
+ }
 }
-$("generate").onclick=makeQR;
 
-$("csv").onclick=()=>{
- const data=readData();
- const rows=[["Day","Lecture","Student ID","Status","Recorded At"]];
- Object.entries(data).forEach(([key,arr])=>{
-  arr.forEach(x=>rows.push([
-   key,x.studentId,x.studentId,x.status,x.recordedAt
-  ]));
- });
- const csvText=rows.map(row=>row.map(v=>
-  '"'+String(v).replace(/"/g,'""')+'"'
- ).join(",")).join("\r\n");
- const blob=new Blob(["\uFEFF"+csvText],{type:"text/csv;charset=utf-8;"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
- a.href=url;a.download="attendance-report.csv";a.click();
- URL.revokeObjectURL(url);
+$("stopScanner").onclick = stopScanner;
+
+async function markAttendance(raw) {
+ try {
+   const payload = JSON.parse(raw);
+   if (!payload.sessionId) throw new Error("QR चुकीचा आहे.");
+
+   const sessionSnap = await getDoc(doc(db, "sessions", payload.sessionId));
+   if (!sessionSnap.exists()) throw new Error("Lecture session सापडले नाही.");
+
+   const session = sessionSnap.data();
+   if (!session.expiresAt ||
+       session.expiresAt.toMillis() <= Date.now()) {
+     throw new Error("QR Expired. नवीन QR स्कॅन कर.");
+   }
+
+   const recordId = payload.sessionId + "_" + currentUser.uid;
+
+   await setDoc(doc(db, "attendance", recordId), {
+     uid: currentUser.uid,
+     studentId: currentProfile.studentId,
+     studentName: currentProfile.name,
+     studentEmail: currentUser.email,
+     sessionId: payload.sessionId,
+     subject: session.subject,
+     day: session.day,
+     lecture: session.lecture,
+     status: "Present",
+     createdAt: Timestamp.now()
+   });
+
+   showMessage("scanStatus",
+     "Attendance saved! " + session.subject + " — Present");
+ } catch (e) {
+   showMessage("scanStatus", "Attendance failed: " + e.message);
+ }
+}
+
+// STAFF REPORT
+$("report").onclick = async () => {
+ if (currentRole !== "teacher") return;
+
+ try {
+   const snap = await getDocs(collection(db, "attendance"));
+   reportRows = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+   $("reportList").replaceChildren();
+   if (!reportRows.length) {
+     $("reportList").textContent = "Attendance records अजून नाहीत.";
+     return;
+   }
+
+   reportRows.forEach(row => {
+     const p = document.createElement("p");
+     p.textContent =
+       (row.day || "") + " | Lecture " + (row.lecture || "") +
+       " | " + (row.subject || "") + " | " +
+       (row.studentName || row.studentEmail || "") +
+       " | ID: " + (row.studentId || "") +
+       " | " + (row.status || "");
+     $("reportList").appendChild(p);
+   });
+ } catch (e) {
+   $("reportList").textContent = "Report error: " + e.message;
+ }
 };
 
-render();
+$("csv").onclick = () => {
+ if (currentRole !== "teacher" || !reportRows.length) {
+   showMessage("qrStatus", "आधी Load Attendance Report कर.");
+   return;
+ }
+
+ const fields = [
+   "day", "lecture", "subject", "studentName",
+   "studentId", "studentEmail", "status", "sessionId"
+ ];
+
+ const esc = value =>
+   '"' + String(value ?? "").replace(/"/g, '""') + '"';
+
+ const csv = [
+   fields.join(","),
+   ...reportRows.map(row => fields.map(f => esc(row[f])).join(","))
+ ].join("\r\n");
+
+ const url = URL.createObjectURL(
+   new Blob(["\uFEFF" + csv], {type: "text/csv;charset=utf-8"})
+ );
+ const a = document.createElement("a");
+ a.href = url;
+ a.download = "attendance-report.csv";
+ a.click();
+ setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 </script>
 </body>
 </html>
-

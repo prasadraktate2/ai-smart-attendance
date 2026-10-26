@@ -1,24 +1,26 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Smart Attendance</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}
 header{background:#123b72;color:white;padding:20px;text-align:center}
 main{max-width:850px;margin:20px auto;padding:12px}
-.card{background:white;padding:18px;margin-bottom:16px;border-radius:14px;box-shadow:0 3px 12px #0000000c}
+.card{background:white;padding:18px;margin-bottom:16px;border-radius:14px;box-shadow:0 3px 12px #0001}
 input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #cbd5e1;border-radius:8px;font-size:16px}
 button{background:#1764d1;color:white;border:0;font-weight:bold;cursor:pointer}
-button.secondary{background:#475569}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.secondary{background:#475569}
+.subject{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;margin:8px 0;background:#eaf2ff;border-radius:8px}
+.subject button{width:auto;margin:0;padding:8px 12px;background:#b91c1c}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .stat{background:#eaf2ff;padding:15px;border-radius:10px}
 .stat strong{display:block;font-size:25px;margin-top:8px}
 .hidden{display:none}
 small{color:#64748b}
-li{margin:10px 0}
 @media(max-width:480px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -27,7 +29,6 @@ li{margin:10px 0}
 <h2>🎓 AI Smart Attendance</h2>
 <p>College Attendance Management System</p>
 </header>
-
 <main>
 <section class="card" id="loginCard">
 <h3>Login</h3>
@@ -37,18 +38,18 @@ li{margin:10px 0}
 <option value="teacher">Teacher</option>
 </select>
 <label for="user">User ID</label>
-<input id="user" placeholder="Enter your User ID">
+<input id="user" placeholder="Enter User ID">
 <button onclick="login()">Continue</button>
-<p id="message" role="status"></p>
-<small>Demo only — secure login will be added later.</small>
+<p id="message"></p>
+<small>Demo login only. Secure authentication is not active.</small>
 </section>
 
 <div id="dashboard" class="hidden">
 <section class="card">
 <h3 id="welcome">Attendance Dashboard</h3>
 <div class="grid">
-<div class="stat">Total Students<strong id="students">106</strong></div>
-<div class="stat">Attendance Today<strong id="attendance">0</strong></div>
+<div class="stat">Total Students<strong>106</strong></div>
+<div class="stat">Attendance Today<strong>0</strong></div>
 </div>
 </section>
 
@@ -56,82 +57,132 @@ li{margin:10px 0}
 <h3>📅 Weekly Timetable</h3>
 <label for="day">Select Day</label>
 <select id="day" onchange="showSubjects()">
-<option value="Monday">Monday</option>
-<option value="Tuesday">Tuesday</option>
-<option value="Wednesday">Wednesday</option>
-<option value="Thursday">Thursday</option>
-<option value="Friday">Friday</option>
-<option value="Saturday">Saturday</option>
+<option>Monday</option><option>Tuesday</option>
+<option>Wednesday</option><option>Thursday</option>
+<option>Friday</option><option>Saturday</option>
 </select>
 <div id="subjects"></div>
+
+<div id="teacherControls" class="hidden">
+<hr>
+<h4>Add Subject for selected day</h4>
+<input id="newSubject" placeholder="Subject name">
+<input id="lectureTime" placeholder="Lecture time (e.g. 10:00 AM)">
+<button onclick="addSubject()">➕ Add Subject</button>
+<p id="subjectMessage"></p>
+</div>
 </section>
 
 <section class="card">
 <h3>📷 QR Code Attendance</h3>
-<p>QR attendance will be connected in the next step.</p>
-<p id="qrStatus">QR system not active yet.</p>
+<p>QR attendance will be implemented in the next step.</p>
 </section>
 
 <section class="card">
 <h3>📊 Attendance Reports</h3>
-<p id="report">Attendance records will appear here when the database is connected.</p>
-<button onclick="downloadCSV()">📥 Download CSV</button>
+<p>Attendance reports will be connected after the attendance database is added.</p>
+<button onclick="downloadCSV()">📥 Download CSV Sample</button>
 </section>
 
 <section class="card">
 <h3>🤖 Attendance Analytics</h3>
-<p>Attendance analytics will be added after attendance records are connected.</p>
+<p>Analytics will be added after attendance records are connected.</p>
 </section>
-
 <button class="secondary" onclick="logout()">Logout</button>
 </div>
 </main>
 
 <script>
-const timetable = {
-Monday:["Subject 1","Subject 2"],
-Tuesday:["Subject 1","Subject 3"],
-Wednesday:["Subject 2","Subject 3"],
-Thursday:["Subject 1","Subject 2"],
-Friday:["Subject 2","Subject 3"],
-Saturday:["Subject 1"]
+const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+const timetable={
+Monday:[{name:"Subject 1",time:"10:00 AM"},{name:"Subject 2",time:"11:00 AM"}],
+Tuesday:[{name:"Subject 1",time:"10:00 AM"},{name:"Subject 3",time:"11:00 AM"}],
+Wednesday:[{name:"Subject 2",time:"10:00 AM"},{name:"Subject 3",time:"11:00 AM"}],
+Thursday:[{name:"Subject 1",time:"10:00 AM"},{name:"Subject 2",time:"11:00 AM"}],
+Friday:[{name:"Subject 2",time:"10:00 AM"},{name:"Subject 3",time:"11:00 AM"}],
+Saturday:[{name:"Subject 1",time:"10:00 AM"}]
 };
 
+let role="student";
+
 function login(){
- const role=document.getElementById("role").value;
  const user=document.getElementById("user").value.trim();
  const message=document.getElementById("message");
-
- if(!user){
-   message.textContent="Please enter your User ID.";
-   return;
- }
-
+ if(!user){message.textContent="Please enter your User ID.";return;}
+ role=document.getElementById("role").value;
  document.getElementById("loginCard").classList.add("hidden");
  document.getElementById("dashboard").classList.remove("hidden");
  document.getElementById("welcome").textContent=
-   (role==="teacher"?"Teacher":"Student")+" Dashboard — "+user;
+ (role==="teacher"?"Teacher":"Student")+" Dashboard — "+user;
+ document.getElementById("teacherControls").classList.toggle("hidden",role!=="teacher");
  showSubjects();
 }
 
 function showSubjects(){
  const day=document.getElementById("day").value;
  const box=document.getElementById("subjects");
- box.innerHTML="<p><b>"+day+"</b></p>";
- timetable[day].forEach(subject=>{
-   const p=document.createElement("p");
-   p.textContent="📘 "+subject;
-   box.appendChild(p);
+ box.replaceChildren();
+ const heading=document.createElement("h4");
+ heading.textContent=day+" Subjects";
+ box.appendChild(heading);
+
+ if(!timetable[day].length){
+  const p=document.createElement("p");
+  p.textContent="No subjects added for this day yet.";
+  box.appendChild(p);
+  return;
+ }
+
+ timetable[day].forEach((subject,index)=>{
+  const row=document.createElement("div");
+  row.className="subject";
+  const text=document.createElement("span");
+  text.textContent=subject.name+" — "+subject.time;
+  row.appendChild(text);
+
+  if(role==="teacher"){
+   const del=document.createElement("button");
+   del.textContent="Delete";
+   del.onclick=()=>{
+    timetable[day].splice(index,1);
+    showSubjects();
+   };
+   row.appendChild(del);
+  }
+  box.appendChild(row);
  });
 }
 
+function addSubject(){
+ const name=document.getElementById("newSubject").value.trim();
+ const time=document.getElementById("lectureTime").value.trim();
+ const message=document.getElementById("subjectMessage");
+ const day=document.getElementById("day").value;
+
+ if(role!=="teacher"){message.textContent="Teacher login required.";return;}
+ if(!name||!time){message.textContent="Enter subject name and lecture time.";return;}
+
+ timetable[day].push({name:name,time:time});
+ document.getElementById("newSubject").value="";
+ document.getElementById("lectureTime").value="";
+ message.textContent="Subject added to "+day+".";
+ showSubjects();
+}
+
 function downloadCSV(){
- const csv="Date,Day,Subject,Student ID,Status\n";
- const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+ const rows=[["Day","Subject","Lecture Time"]];
+ days.forEach(day=>{
+  timetable[day].forEach(s=>rows.push([day,s.name,s.time]));
+ });
+ const csv=rows.map(row=>row.map(value=>
+  '"'+String(value).replace(/"/g,'""')+'"'
+ ).join(",")).join("\r\n");
+ const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
  const url=URL.createObjectURL(blob);
  const a=document.createElement("a");
  a.href=url;
- a.download="attendance-report.csv";
+ a.download="weekly-timetable.csv";
  a.click();
  URL.revokeObjectURL(url);
 }
@@ -141,6 +192,7 @@ function logout(){
  document.getElementById("loginCard").classList.remove("hidden");
  document.getElementById("user").value="";
  document.getElementById("message").textContent="";
+ document.getElementById("subjectMessage").textContent="";
 }
 </script>
 </body>

@@ -1,111 +1,289 @@
-<section class="card" id="weekly-timetable">
-  <h3>📅 Weekly Timetable</h3>
 
-  <label for="daySelect">Select Day:</label>
-  <select id="daySelect">
-    <option>Monday</option>
-    <option>Tuesday</option>
-    <option>Wednesday</option>
-    <option>Thursday</option>
-    <option>Friday</option>
-    <option>Saturday</option>
-  </select>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Attendance System</title>
 
-  <div id="lectureList"></div>
-  <p id="attendanceStatus"></p>
-</section>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      margin: 0;
+      padding: 16px;
+      color: #222;
+    }
 
-<style>
-#weekly-timetable select,
-#weekly-timetable button {
-  padding: 10px;
-  margin: 6px 0;
-  border-radius: 8px;
-}
+    .card {
+      background: white;
+      padding: 18px;
+      margin-bottom: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0001;
+    }
 
-.lecture-card {
-  border: 1px solid #ddd;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 10px;
-}
-</style>
+    h2, h3 { color: #2457a7; }
 
-<script>
-const timetable = {
-  Monday: [
-    { subject: "Chemistry", time: "10:00–10:55" },
-    { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
-    { subject: "Verbal Communication Skills", time: "12:30–14:30" },
-    { subject: "Chemistry", time: "14:50–16:50" }
-  ],
+    select, input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      box-sizing: border-box;
+      border-radius: 7px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
 
-  Tuesday: [
-    { subject: "Environmental Science", time: "10:00–10:55" },
-    { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
-    { subject: "Computational Thinking & Problem Solving", time: "12:30–14:30" },
-    { subject: "Computational Thinking & Problem Solving", time: "14:50–15:50" },
-    { subject: "Physics", time: "15:50–16:50" }
-  ],
+    button {
+      background: #2457a7;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
 
-  Wednesday: [
-    { subject: "Communication", time: "10:00–10:55" },
-    { subject: "Chemistry", time: "10:55–11:50" },
-    { subject: "Computational Thinking & Problem Solving", time: "12:30–13:30" },
-    { subject: "Engineering Mathematics-I", time: "13:30–14:30" },
-    { subject: "Yoga and Meditation", time: "14:30–16:50" }
-  ],
+    .lecture-card {
+      border: 1px solid #ddd;
+      border-radius: 9px;
+      padding: 12px;
+      margin: 12px 0;
+    }
 
-  Thursday: [
-    { subject: "Physics", time: "Confirm timing" },
-    { subject: "Environmental Science", time: "10:55–11:50" },
-    { subject: "Physics", time: "12:30–14:30" },
-    { subject: "Computer Workshop Practice", time: "14:50–16:50" }
-  ],
+    .lecture-card.selected {
+      border: 2px solid #2457a7;
+      background: #eef4ff;
+    }
 
-  Friday: [
-    { subject: "Engineering Mathematics-I", time: "10:00–10:55" },
-    { subject: "Computational Thinking & Problem Solving", time: "10:55–11:50" },
-    { subject: "Computer Workshop Practice", time: "12:30–14:30" },
-    { subject: "Introduction to AI Tools", time: "14:50–16:50" }
-  ],
+    .message { overflow-wrap: anywhere; }
+    small { color: #666; }
+  </style>
+</head>
 
-  Saturday: [
-    { subject: "Subject to be added", time: "Confirm timing" }
-  ]
-};
+<body>
+  <h2>🎓 AI Attendance System</h2>
 
-const daySelect = document.getElementById("daySelect");
-const lectureList = document.getElementById("lectureList");
-const attendanceStatus = document.getElementById("attendanceStatus");
+  <section class="card">
+    <h3>📅 Weekly Timetable</h3>
 
-function showTimetable() {
-  const day = daySelect.value;
-  lectureList.replaceChildren();
+    <label for="daySelect">Select Day</label>
+    <select id="daySelect">
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+    </select>
 
-  timetable[day].forEach((lecture, index) => {
-    const card = document.createElement("div");
-    card.className = "lecture-card";
+    <div id="lectureList"></div>
+  </section>
 
-    const heading = document.createElement("h4");
-    heading.textContent = `${index + 1}. ${lecture.subject}`;
+  <section class="card">
+    <h3>🧑‍🎓 Lecture Attendance</h3>
 
-    const time = document.createElement("p");
-    time.textContent = `Time: ${lecture.time}`;
+    <p id="selectedLecture">Please select a lecture first.</p>
 
-    const button = document.createElement("button");
-    button.textContent = "Open Attendance";
+    <label for="studentId">Student ID</label>
+    <input id="studentId" placeholder="Enter Student ID">
 
-    button.addEventListener("click", () => {
-      attendanceStatus.textContent =
-        `Selected: ${day} | Lecture ${index + 1} | ${lecture.subject}`;
+    <button id="markPresent">Mark Present</button>
+    <button id="viewAttendance">View Selected Lecture Attendance</button>
+
+    <p id="attendanceMessage" class="message" aria-live="polite"></p>
+    <div id="attendanceRecords"></div>
+  </section>
+
+  <section class="card">
+    <h3>📊 Attendance Summary</h3>
+    <p id="summary">Total attendance records: 0</p>
+  </section>
+
+  <script>
+    const timetable = {
+      Monday: [
+        { subject: "Chemistry", time: "10:00–10:55" },
+        { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
+        { subject: "Verbal Communication Skills", time: "12:30–14:30" },
+        { subject: "Chemistry", time: "14:50–16:50" }
+      ],
+      Tuesday: [
+        { subject: "Environmental Science", time: "10:00–10:55" },
+        { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
+        { subject: "Computational Thinking & Problem Solving", time: "12:30–14:30" },
+        { subject: "Computational Thinking & Problem Solving", time: "14:50–15:50" },
+        { subject: "Physics", time: "15:50–16:50" }
+      ],
+      Wednesday: [
+        { subject: "Communication", time: "10:00–10:55" },
+        { subject: "Chemistry", time: "10:55–11:50" },
+        { subject: "Computational Thinking & Problem Solving", time: "12:30–13:30" },
+        { subject: "Engineering Mathematics-I", time: "13:30–14:30" },
+        { subject: "Yoga and Meditation", time: "14:30–16:50" }
+      ],
+      Thursday: [
+        { subject: "Physics", time: "Timing to confirm" },
+        { subject: "Environmental Science", time: "10:55–11:50" },
+        { subject: "Physics", time: "12:30–14:30" },
+        { subject: "Computer Workshop Practice", time: "14:50–16:50" }
+      ],
+      Friday: [
+        { subject: "Engineering Mathematics-I", time: "10:00–10:55" },
+        { subject: "Computational Thinking & Problem Solving", time: "10:55–11:50" },
+        { subject: "Computer Workshop Practice", time: "12:30–14:30" },
+        { subject: "Introduction to AI Tools", time: "14:50–16:50" }
+      ],
+      Saturday: [
+        { subject: "Subject to be added", time: "Timing to confirm" }
+      ]
+    };
+
+    const daySelect = document.getElementById("daySelect");
+    const lectureList = document.getElementById("lectureList");
+    const studentId = document.getElementById("studentId");
+    const selectedLectureText = document.getElementById("selectedLecture");
+    const message = document.getElementById("attendanceMessage");
+    const recordsDiv = document.getElementById("attendanceRecords");
+    const summary = document.getElementById("summary");
+
+    let selectedIndex = null;
+
+    function getRecords() {
+      try {
+        return JSON.parse(
+          localStorage.getItem("aiAttendanceRecords") || "{}"
+        );
+      } catch {
+        return {};
+      }
+    }
+
+    function saveRecords(records) {
+      localStorage.setItem(
+        "aiAttendanceRecords",
+        JSON.stringify(records)
+      );
+    }
+
+    function getLectureKey() {
+      return `${daySelect.value}-lecture-${selectedIndex + 1}`;
+    }
+
+    function renderTimetable() {
+      selectedIndex = null;
+      lectureList.replaceChildren();
+      recordsDiv.replaceChildren();
+      message.textContent = "";
+      selectedLectureText.textContent = "Please select a lecture first.";
+
+      timetable[daySelect.value].forEach((lecture, index) => {
+        const card = document.createElement("div");
+        card.className = "lecture-card";
+
+        const heading = document.createElement("h4");
+        heading.textContent = `${index + 1}. ${lecture.subject}`;
+
+        const time = document.createElement("p");
+        time.textContent = `Time: ${lecture.time}`;
+
+        const button = document.createElement("button");
+        button.textContent = "Select This Lecture";
+
+        button.addEventListener("click", () => {
+          selectedIndex = index;
+
+          document.querySelectorAll(".lecture-card")
+            .forEach(item => item.classList.remove("selected"));
+
+          card.classList.add("selected");
+          selectedLectureText.textContent =
+            `${daySelect.value} | Lecture ${index + 1} | ${lecture.subject}`;
+
+          message.textContent = "";
+          recordsDiv.replaceChildren();
+        });
+
+        card.append(heading, time, button);
+        lectureList.appendChild(card);
+      });
+    }
+
+    function updateSummary() {
+      const records = getRecords();
+      let total = 0;
+
+      Object.values(records).forEach(students => {
+        total += students.length;
+      });
+
+      summary.textContent = `Total attendance records: ${total}`;
+    }
+
+    document.getElementById("markPresent").addEventListener("click", () => {
+      const id = studentId.value.trim();
+
+      if (selectedIndex === null) {
+        message.textContent = "Please select a lecture first.";
+        return;
+      }
+
+      if (!id) {
+        message.textContent = "Please enter Student ID.";
+        return;
+      }
+
+      const records = getRecords();
+      const key = getLectureKey();
+
+      if (!records[key]) records[key] = [];
+
+      if (records[key].some(item => item.studentId === id)) {
+        message.textContent =
+          "Attendance already exists for this student and lecture.";
+        return;
+      }
+
+      records[key].push({
+        studentId: id,
+        status: "Present",
+        recordedAt: new Date().toISOString()
+      });
+
+      try {
+        saveRecords(records);
+        message.textContent = "Attendance saved on this browser.";
+        updateSummary();
+      } catch {
+        message.textContent = "Could not save attendance. Browser storage may be full.";
+      }
     });
 
-    card.append(heading, time, button);
-    lectureList.appendChild(card);
-  });
-}
+    document.getElementById("viewAttendance").addEventListener("click", () => {
+      if (selectedIndex === null) {
+        message.textContent = "Please select a lecture first.";
+        return;
+      }
 
-daySelect.addEventListener("change", showTimetable);
-showTimetable();
-</script>
+      recordsDiv.replaceChildren();
+
+      const records = getRecords();
+      const students = records[getLectureKey()] || [];
+
+      if (students.length === 0) {
+        recordsDiv.textContent = "No attendance records for this lecture.";
+        return;
+      }
+
+      students.forEach(student => {
+        const row = document.createElement("p");
+        row.textContent = `${student.studentId} — ${student.status}`;
+        recordsDiv.appendChild(row);
+      });
+    });
+
+    daySelect.addEventListener("change", renderTimetable);
+
+    renderTimetable();
+    updateSummary();
+  </script>
+</body>
+</html>

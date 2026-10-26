@@ -1,288 +1,247 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Attendance System</title>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f6fb;
-      margin: 0;
-      padding: 16px;
-      color: #222;
-    }
-
-    .card {
-      background: white;
-      padding: 18px;
-      margin-bottom: 18px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px #0001;
-    }
-
-    h2, h3 { color: #2457a7; }
-
-    select, input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 7px 0;
-      box-sizing: border-box;
-      border-radius: 7px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-    }
-
-    button {
-      background: #2457a7;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .lecture-card {
-      border: 1px solid #ddd;
-      border-radius: 9px;
-      padding: 12px;
-      margin: 12px 0;
-    }
-
-    .lecture-card.selected {
-      border: 2px solid #2457a7;
-      background: #eef4ff;
-    }
-
-    .message { overflow-wrap: anywhere; }
-    small { color: #666; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Attendance System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:16px;color:#172033}
+h2,h3{color:#2457a7}
+.card{background:white;padding:16px;margin:14px 0;border-radius:12px;box-shadow:0 2px 8px #0001}
+input,select,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:7px;font-size:15px}
+button{background:#2457a7;color:white;border:0;cursor:pointer}
+.lecture{padding:12px;border:1px solid #ddd;border-radius:8px;margin:10px 0}
+.lecture.selected{border:2px solid #2457a7;background:#eef4ff}
+.stat{background:#eaf1ff;padding:12px;border-radius:8px;margin:5px 0}
+#qrBox{text-align:center;margin:16px auto;display:flex;justify-content:center}
+small{color:#555}
+</style>
 </head>
-
 <body>
-  <h2>🎓 AI Attendance System</h2>
 
-  <section class="card">
-    <h3>📅 Weekly Timetable</h3>
+<h2>🎓 AI Attendance System</h2>
 
-    <label for="daySelect">Select Day</label>
-    <select id="daySelect">
-      <option>Monday</option>
-      <option>Tuesday</option>
-      <option>Wednesday</option>
-      <option>Thursday</option>
-      <option>Friday</option>
-      <option>Saturday</option>
-    </select>
+<section class="card">
+<h3>📊 Dashboard</h3>
+<div class="stat">Total Recorded Attendance: <strong id="total">0</strong></div>
+<div class="stat">Selected Day: <strong id="todayDay">Monday</strong></div>
+</section>
 
-    <div id="lectureList"></div>
-  </section>
+<section class="card">
+<h3>📅 Weekly Timetable</h3>
+<label for="day">Select Day</label>
+<select id="day">
+<option>Monday</option><option>Tuesday</option>
+<option>Wednesday</option><option>Thursday</option>
+<option>Friday</option><option>Saturday</option>
+</select>
+<div id="lectures"></div>
+</section>
 
-  <section class="card">
-    <h3>🧑‍🎓 Lecture Attendance</h3>
+<section class="card">
+<h3>🧑‍🎓 Lecture Attendance</h3>
+<p id="selected">Select a lecture first.</p>
+<label for="student">Student ID</label>
+<input id="student" placeholder="Enter Student ID">
+<button id="present">Mark Present</button>
+<button id="view">View This Lecture's Attendance</button>
+<div id="records"></div>
+</section>
 
-    <p id="selectedLecture">Please select a lecture first.</p>
+<section class="card">
+<h3>📷 QR Code Attendance</h3>
+<p id="qrInfo">Select a lecture first.</p>
+<div id="qrBox">QR code will appear here</div>
+<p id="timer">Refresh interval: 10 seconds</p>
+<button id="generate">Generate / Refresh QR</button>
+<p><small>Demo QR only. Server-side token validation is required for secure attendance.</small></p>
+</section>
 
-    <label for="studentId">Student ID</label>
-    <input id="studentId" placeholder="Enter Student ID">
+<section class="card">
+<h3>📥 Attendance CSV Download</h3>
+<button id="csv">Download CSV Report</button>
+</section>
 
-    <button id="markPresent">Mark Present</button>
-    <button id="viewAttendance">View Selected Lecture Attendance</button>
+<script>
+const timetable={
+Monday:[
+["Chemistry","10:00-10:55"],
+["Engineering Mathematics-I","10:55-11:50"],
+["Verbal Communication Skills","12:30-14:30"],
+["Chemistry","14:50-16:50"]],
+Tuesday:[
+["Environmental Science","10:00-10:55"],
+["Engineering Mathematics-I","10:55-11:50"],
+["Computational Thinking & Problem Solving","12:30-14:30"],
+["Computational Thinking & Problem Solving","14:50-15:50"],
+["Physics","15:50-16:50"]],
+Wednesday:[
+["Communication","10:00-10:55"],
+["Chemistry","10:55-11:50"],
+["Computational Thinking & Problem Solving","12:30-13:30"],
+["Engineering Mathematics-I","13:30-14:30"],
+["Yoga and Meditation","14:30-16:50"]],
+Thursday:[
+["Physics","Confirm timing"],
+["Environmental Science","10:55-11:50"],
+["Physics","12:30-14:30"],
+["Computer Workshop Practice","14:50-16:50"]],
+Friday:[
+["Engineering Mathematics-I","10:00-10:55"],
+["Computational Thinking & Problem Solving","10:55-11:50"],
+["Computer Workshop Practice","12:30-14:30"],
+["Introduction to AI Tools","14:50-16:50"]],
+Saturday:[
+["Subject to be added","Confirm timing"]]
+};
 
-    <p id="attendanceMessage" class="message" aria-live="polite"></p>
-    <div id="attendanceRecords"></div>
-  </section>
+const $=id=>document.getElementById(id);
+let selectedIndex=null;
+let qrInterval=null;
+let qrCount=10;
+let qrExpiry=0;
+let activeToken=null;
 
-  <section class="card">
-    <h3>📊 Attendance Summary</h3>
-    <p id="summary">Total attendance records: 0</p>
-  </section>
+function readData(){
+ try{return JSON.parse(localStorage.getItem("attendanceData")||"{}")}
+ catch{return {}}
+}
+function writeData(data){
+ localStorage.setItem("attendanceData",JSON.stringify(data));
+}
+function lectureKey(){
+ return $("day").value+"-lecture-"+(selectedIndex+1);
+}
+function render(){
+ selectedIndex=null;
+ $("todayDay").textContent=$("day").value;
+ $("selected").textContent="Select a lecture first.";
+ $("lectures").replaceChildren();
+ $("records").replaceChildren();
+ $("qrBox").textContent="Select a lecture and generate a QR.";
+ $("qrInfo").textContent="Select a lecture first.";
+ if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
+ activeToken=null;
 
-  <script>
-    const timetable = {
-      Monday: [
-        { subject: "Chemistry", time: "10:00–10:55" },
-        { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
-        { subject: "Verbal Communication Skills", time: "12:30–14:30" },
-        { subject: "Chemistry", time: "14:50–16:50" }
-      ],
-      Tuesday: [
-        { subject: "Environmental Science", time: "10:00–10:55" },
-        { subject: "Engineering Mathematics-I", time: "10:55–11:50" },
-        { subject: "Computational Thinking & Problem Solving", time: "12:30–14:30" },
-        { subject: "Computational Thinking & Problem Solving", time: "14:50–15:50" },
-        { subject: "Physics", time: "15:50–16:50" }
-      ],
-      Wednesday: [
-        { subject: "Communication", time: "10:00–10:55" },
-        { subject: "Chemistry", time: "10:55–11:50" },
-        { subject: "Computational Thinking & Problem Solving", time: "12:30–13:30" },
-        { subject: "Engineering Mathematics-I", time: "13:30–14:30" },
-        { subject: "Yoga and Meditation", time: "14:30–16:50" }
-      ],
-      Thursday: [
-        { subject: "Physics", time: "Timing to confirm" },
-        { subject: "Environmental Science", time: "10:55–11:50" },
-        { subject: "Physics", time: "12:30–14:30" },
-        { subject: "Computer Workshop Practice", time: "14:50–16:50" }
-      ],
-      Friday: [
-        { subject: "Engineering Mathematics-I", time: "10:00–10:55" },
-        { subject: "Computational Thinking & Problem Solving", time: "10:55–11:50" },
-        { subject: "Computer Workshop Practice", time: "12:30–14:30" },
-        { subject: "Introduction to AI Tools", time: "14:50–16:50" }
-      ],
-      Saturday: [
-        { subject: "Subject to be added", time: "Timing to confirm" }
-      ]
-    };
+ timetable[$("day").value].forEach((item,i)=>{
+  const card=document.createElement("div");
+  card.className="lecture";
+  const title=document.createElement("h4");
+  title.textContent=(i+1)+". "+item[0];
+  const time=document.createElement("p");
+  time.textContent="Time: "+item[1];
+  const btn=document.createElement("button");
+  btn.textContent="Select Lecture";
+  btn.onclick=()=>{
+   selectedIndex=i;
+   document.querySelectorAll(".lecture").forEach(x=>x.classList.remove("selected"));
+   card.classList.add("selected");
+   $("selected").textContent=$("day").value+" | Lecture "+(i+1)+" | "+item[0];
+   $("records").replaceChildren();
+   $("qrInfo").textContent="Selected: "+item[0];
+   $("qrBox").textContent="Press Generate QR Code.";
+   if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
+   activeToken=null;
+  };
+  card.append(title,time,btn);
+  $("lectures").appendChild(card);
+ });
+ updateTotal();
+}
+function updateTotal(){
+ const data=readData();
+ let total=0;
+ Object.values(data).forEach(arr=>total+=arr.length);
+ $("total").textContent=total;
+}
+$("day").onchange=render;
 
-    const daySelect = document.getElementById("daySelect");
-    const lectureList = document.getElementById("lectureList");
-    const studentId = document.getElementById("studentId");
-    const selectedLectureText = document.getElementById("selectedLecture");
-    const message = document.getElementById("attendanceMessage");
-    const recordsDiv = document.getElementById("attendanceRecords");
-    const summary = document.getElementById("summary");
+$("present").onclick=()=>{
+ const id=$("student").value.trim();
+ if(selectedIndex===null){alert("Please select a lecture first.");return;}
+ if(!id){alert("Enter Student ID.");return;}
+ const data=readData(),key=lectureKey();
+ if(!data[key])data[key]=[];
+ if(data[key].some(x=>x.studentId===id)){
+  alert("Attendance already recorded for this lecture.");return;
+ }
+ data[key].push({
+  studentId:id,status:"Present",
+  recordedAt:new Date().toISOString()
+ });
+ try{
+  writeData(data);
+  alert("Attendance saved in this browser.");
+  updateTotal();
+ }catch(e){alert("Could not save attendance.");}
+};
 
-    let selectedIndex = null;
+$("view").onclick=()=>{
+ if(selectedIndex===null){alert("Select a lecture first.");return;}
+ const data=readData(),arr=data[lectureKey()]||[];
+ $("records").replaceChildren();
+ if(!arr.length){$("records").textContent="No records yet.";return;}
+ arr.forEach(x=>{
+  const p=document.createElement("p");
+  p.textContent=x.studentId+" — "+x.status;
+  $("records").appendChild(p);
+ });
+};
 
-    function getRecords() {
-      try {
-        return JSON.parse(
-          localStorage.getItem("aiAttendanceRecords") || "{}"
-        );
-      } catch {
-        return {};
-      }
-    }
+function makeQR(){
+ if(selectedIndex===null){alert("Select a lecture first.");return;}
+ if(typeof QRCode==="undefined"){
+  alert("QR library did not load. Check internet connection.");return;
+ }
+ if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
+ function refresh(){
+  activeToken=(crypto.randomUUID?crypto.randomUUID():
+   Date.now()+"-"+Math.random().toString(36).slice(2));
+  const item=timetable[$("day").value][selectedIndex];
+  const payload=JSON.stringify({
+   day:$("day").value,
+   lecture:selectedIndex+1,
+   subject:item[0],
+   token:activeToken,
+   expiresAt:Date.now()+10000
+  });
+  $("qrBox").replaceChildren();
+  new QRCode($("qrBox"),{text:payload,width:220,height:220});
+  qrExpiry=Date.now()+10000;
+  qrCount=10;
+  $("qrInfo").textContent=$("day").value+" — "+item[0];
+ }
+ refresh();
+ qrInterval=setInterval(()=>{
+  const remaining=Math.max(0,Math.ceil((qrExpiry-Date.now())/1000));
+  $("timer").textContent="QR refresh: "+remaining+" seconds";
+  if(Date.now()>=qrExpiry)refresh();
+ },250);
+}
+$("generate").onclick=makeQR;
 
-    function saveRecords(records) {
-      localStorage.setItem(
-        "aiAttendanceRecords",
-        JSON.stringify(records)
-      );
-    }
+$("csv").onclick=()=>{
+ const data=readData();
+ const rows=[["Day","Lecture","Student ID","Status","Recorded At"]];
+ Object.entries(data).forEach(([key,arr])=>{
+  arr.forEach(x=>rows.push([
+   key,x.studentId,x.studentId,x.status,x.recordedAt
+  ]));
+ });
+ const csvText=rows.map(row=>row.map(v=>
+  '"'+String(v).replace(/"/g,'""')+'"'
+ ).join(",")).join("\r\n");
+ const blob=new Blob(["\uFEFF"+csvText],{type:"text/csv;charset=utf-8;"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;a.download="attendance-report.csv";a.click();
+ URL.revokeObjectURL(url);
+};
 
-    function getLectureKey() {
-      return `${daySelect.value}-lecture-${selectedIndex + 1}`;
-    }
-
-    function renderTimetable() {
-      selectedIndex = null;
-      lectureList.replaceChildren();
-      recordsDiv.replaceChildren();
-      message.textContent = "";
-      selectedLectureText.textContent = "Please select a lecture first.";
-
-      timetable[daySelect.value].forEach((lecture, index) => {
-        const card = document.createElement("div");
-        card.className = "lecture-card";
-
-        const heading = document.createElement("h4");
-        heading.textContent = `${index + 1}. ${lecture.subject}`;
-
-        const time = document.createElement("p");
-        time.textContent = `Time: ${lecture.time}`;
-
-        const button = document.createElement("button");
-        button.textContent = "Select This Lecture";
-
-        button.addEventListener("click", () => {
-          selectedIndex = index;
-
-          document.querySelectorAll(".lecture-card")
-            .forEach(item => item.classList.remove("selected"));
-
-          card.classList.add("selected");
-          selectedLectureText.textContent =
-            `${daySelect.value} | Lecture ${index + 1} | ${lecture.subject}`;
-
-          message.textContent = "";
-          recordsDiv.replaceChildren();
-        });
-
-        card.append(heading, time, button);
-        lectureList.appendChild(card);
-      });
-    }
-
-    function updateSummary() {
-      const records = getRecords();
-      let total = 0;
-
-      Object.values(records).forEach(students => {
-        total += students.length;
-      });
-
-      summary.textContent = `Total attendance records: ${total}`;
-    }
-
-    document.getElementById("markPresent").addEventListener("click", () => {
-      const id = studentId.value.trim();
-
-      if (selectedIndex === null) {
-        message.textContent = "Please select a lecture first.";
-        return;
-      }
-
-      if (!id) {
-        message.textContent = "Please enter Student ID.";
-        return;
-      }
-
-      const records = getRecords();
-      const key = getLectureKey();
-
-      if (!records[key]) records[key] = [];
-
-      if (records[key].some(item => item.studentId === id)) {
-        message.textContent =
-          "Attendance already exists for this student and lecture.";
-        return;
-      }
-
-      records[key].push({
-        studentId: id,
-        status: "Present",
-        recordedAt: new Date().toISOString()
-      });
-
-      try {
-        saveRecords(records);
-        message.textContent = "Attendance saved on this browser.";
-        updateSummary();
-      } catch {
-        message.textContent = "Could not save attendance. Browser storage may be full.";
-      }
-    });
-
-    document.getElementById("viewAttendance").addEventListener("click", () => {
-      if (selectedIndex === null) {
-        message.textContent = "Please select a lecture first.";
-        return;
-      }
-
-      recordsDiv.replaceChildren();
-
-      const records = getRecords();
-      const students = records[getLectureKey()] || [];
-
-      if (students.length === 0) {
-        recordsDiv.textContent = "No attendance records for this lecture.";
-        return;
-      }
-
-      students.forEach(student => {
-        const row = document.createElement("p");
-        row.textContent = `${student.studentId} — ${student.status}`;
-        recordsDiv.appendChild(row);
-      });
-    });
-
-    daySelect.addEventListener("change", renderTimetable);
-
-    renderTimetable();
-    updateSummary();
-  </script>
+render();
+</script>
 </body>
 </html>
+

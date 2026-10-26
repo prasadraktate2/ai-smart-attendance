@@ -1,96 +1,148 @@
-<!DOCTYPE html><html lang="en">
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Smart Attendance System</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f6fc;
-      color: #172554;
-    }
-    header {
-      background: #142b5f;
-      color: white;
-      padding: 22px 16px;
-    }
-    header h2 { margin: 0 0 8px; }
-    header p { margin: 0; color: #dbeafe; }
-    main { max-width: 700px; margin: auto; padding: 16px; }
-    .card {
-      background: white;
-      padding: 18px;
-      margin: 14px 0;
-      border-radius: 14px;
-      box-shadow: 0 3px 12px #17255412;
-    }
-    label { display: block; margin: 12px 0 6px; }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      font-size: 16px;
-    }
-    button {
-      background: #2563eb;
-      color: white;
-      border: 0;
-      margin-top: 12px;
-      cursor: pointer;
-    }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .stat { background: #eff6ff; padding: 14px; border-radius: 10px; }
-    .stat strong { display: block; font-size: 23px; margin-top: 8px; }
-    #message { color: #166534; font-weight: bold; }
-    @media(max-width: 400px) { .grid { grid-template-columns: 1fr; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Smart Attendance</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}
+header{background:#123b72;color:white;padding:20px;text-align:center}
+main{max-width:850px;margin:20px auto;padding:12px}
+.card{background:white;padding:18px;margin-bottom:16px;border-radius:14px;box-shadow:0 3px 12px #0000000c}
+input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #cbd5e1;border-radius:8px;font-size:16px}
+button{background:#1764d1;color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#475569}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stat{background:#eaf2ff;padding:15px;border-radius:10px}
+.stat strong{display:block;font-size:25px;margin-top:8px}
+.hidden{display:none}
+small{color:#64748b}
+li{margin:10px 0}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <header>
-    <h2>🎓 AI Smart Attendance</h2>
-    <p>College Attendance Management System</p>
-  </header>  <main>
-    <section class="card">
-      <h3>Login</h3>
-      <label for="role">Login as</label>
-      <select id="role">
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
-      </select>
-      <label for="user">User ID</label>
-      <input id="user" placeholder="Enter your ID">
-      <button onclick="login()">Continue</button>
-      <p id="message"></p>
-      <small>Demo screen only. Secure login will be added later.</small>
-    </section><section class="card">
-  <h3>Attendance Dashboard</h3>
-  <div class="grid">
-    <div class="stat">Total Students<strong id="students">0</strong></div>
-    <div class="stat">Attendance Today<strong id="attendance">0</strong></div>
-  </div>
+<header>
+<h2>🎓 AI Smart Attendance</h2>
+<p>College Attendance Management System</p>
+</header>
+
+<main>
+<section class="card" id="loginCard">
+<h3>Login</h3>
+<label for="role">Login as</label>
+<select id="role">
+<option value="student">Student</option>
+<option value="teacher">Teacher</option>
+</select>
+<label for="user">User ID</label>
+<input id="user" placeholder="Enter your User ID">
+<button onclick="login()">Continue</button>
+<p id="message" role="status"></p>
+<small>Demo only — secure login will be added later.</small>
+</section>
+
+<div id="dashboard" class="hidden">
+<section class="card">
+<h3 id="welcome">Attendance Dashboard</h3>
+<div class="grid">
+<div class="stat">Total Students<strong id="students">106</strong></div>
+<div class="stat">Attendance Today<strong id="attendance">0</strong></div>
+</div>
 </section>
 
 <section class="card">
-  <h3>Quick Features</h3>
-  <p>📅 Weekly Timetable</p>
-  <p>📷 QR Code Attendance</p>
-  <p>📊 Attendance Reports</p>
-  <p>📥 CSV Download</p>
-  <p>🤖 Attendance Analytics</p>
-  <p><small>These features will be implemented in later steps.</small></p>
+<h3>📅 Weekly Timetable</h3>
+<label for="day">Select Day</label>
+<select id="day" onchange="showSubjects()">
+<option value="Monday">Monday</option>
+<option value="Tuesday">Tuesday</option>
+<option value="Wednesday">Wednesday</option>
+<option value="Thursday">Thursday</option>
+<option value="Friday">Friday</option>
+<option value="Saturday">Saturday</option>
+</select>
+<div id="subjects"></div>
 </section>
 
-  </main>  <script>
-    function login() {
-      const role = document.getElementById('role').value;
-      const user = document.getElementById('user').value.trim();
-      document.getElementById('message').textContent = user
-        ? role.charAt(0).toUpperCase() + role.slice(1) +
-          ' demo selected for ID: ' + user
-        : 'Please enter your User ID.';
-    }
-  </script></body>
+<section class="card">
+<h3>📷 QR Code Attendance</h3>
+<p>QR attendance will be connected in the next step.</p>
+<p id="qrStatus">QR system not active yet.</p>
+</section>
+
+<section class="card">
+<h3>📊 Attendance Reports</h3>
+<p id="report">Attendance records will appear here when the database is connected.</p>
+<button onclick="downloadCSV()">📥 Download CSV</button>
+</section>
+
+<section class="card">
+<h3>🤖 Attendance Analytics</h3>
+<p>Attendance analytics will be added after attendance records are connected.</p>
+</section>
+
+<button class="secondary" onclick="logout()">Logout</button>
+</div>
+</main>
+
+<script>
+const timetable = {
+Monday:["Subject 1","Subject 2"],
+Tuesday:["Subject 1","Subject 3"],
+Wednesday:["Subject 2","Subject 3"],
+Thursday:["Subject 1","Subject 2"],
+Friday:["Subject 2","Subject 3"],
+Saturday:["Subject 1"]
+};
+
+function login(){
+ const role=document.getElementById("role").value;
+ const user=document.getElementById("user").value.trim();
+ const message=document.getElementById("message");
+
+ if(!user){
+   message.textContent="Please enter your User ID.";
+   return;
+ }
+
+ document.getElementById("loginCard").classList.add("hidden");
+ document.getElementById("dashboard").classList.remove("hidden");
+ document.getElementById("welcome").textContent=
+   (role==="teacher"?"Teacher":"Student")+" Dashboard — "+user;
+ showSubjects();
+}
+
+function showSubjects(){
+ const day=document.getElementById("day").value;
+ const box=document.getElementById("subjects");
+ box.innerHTML="<p><b>"+day+"</b></p>";
+ timetable[day].forEach(subject=>{
+   const p=document.createElement("p");
+   p.textContent="📘 "+subject;
+   box.appendChild(p);
+ });
+}
+
+function downloadCSV(){
+ const csv="Date,Day,Subject,Student ID,Status\n";
+ const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="attendance-report.csv";
+ a.click();
+ URL.revokeObjectURL(url);
+}
+
+function logout(){
+ document.getElementById("dashboard").classList.add("hidden");
+ document.getElementById("loginCard").classList.remove("hidden");
+ document.getElementById("user").value="";
+ document.getElementById("message").textContent="";
+}
+</script>
+</body>
 </html>

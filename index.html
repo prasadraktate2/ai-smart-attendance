@@ -1,311 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Smart Attendance System</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}
-header{background:#173b76;color:#fff;text-align:center;padding:18px 12px}
-main{max-width:900px;margin:20px auto;padding:12px}
-.card{background:#fff;padding:20px;margin-bottom:18px;border-radius:12px;box-shadow:0 3px 12px #00000012}
-h2{margin-top:0}
-input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #cbd5e1;border-radius:7px;font-size:16px}
-button{background:#2059a8;color:#fff;border:0;cursor:pointer;font-weight:bold}
-button.secondary{background:#475569}
-.hidden{display:none!important}
-.message{padding:10px;border-radius:7px;margin:10px 0}
-.error{background:#fee2e2;color:#991b1b}
-.success{background:#dcfce7;color:#166534}
-#qrBox{text-align:center}
-#qrImage{width:260px;max-width:100%;margin:12px auto;image-rendering:pixelated}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #cbd5e1;padding:8px;text-align:left}
-.table-wrap{overflow-x:auto}
-small{color:#475569}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Attendance System</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+
+    header {
+      background: #173b76;
+      color: white;
+      text-align: center;
+      padding: 18px 12px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 12px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 18px;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px #00000012;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #2059a8;
+      color: white;
+      border: 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .message {
+      padding: 10px;
+      border-radius: 7px;
+      margin: 10px 0;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #166534;
+    }
+  </style>
 </head>
+
 <body>
-<header><h1>AI Smart Attendance System</h1><p>QR Code Based Lecture Attendance</p></header>
+
+<header>
+  <h1>AI Smart Attendance System</h1>
+  <p>QR Code Based Lecture Attendance</p>
+</header>
+
 <main>
   <section id="loginPanel" class="card">
     <h2>Login</h2>
-    <label for="loginType">Login Type</label>
-    <select id="loginType"><option value="student">Student Login</option><option value="teacher">Staff Login</option></select>
-    <input id="loginId" placeholder="Student ID" autocomplete="username">
-    <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password">
-    <button id="loginBtn">Login</button>
-    <div id="loginMessage" aria-live="polite"></div>
-    <small>Student account फक्त Staff तयार करू शकतो. Student स्वतः registration करू शकत नाही.</small>
-  </section>
-
-  <section id="appPanel" class="hidden">
-    <div class="card"><p id="welcomeText"></p><button id="logoutBtn" class="secondary">Logout</button></div>
-
-    <section id="teacherPanel" class="hidden">
-      <div class="card">
-        <h2>Register Student</h2>
-        <input id="studentName" placeholder="Student Full Name">
-        <input id="studentId" placeholder="Student ID (अक्षरे/अंक, 3–30)">
-        <input id="studentPassword" type="password" placeholder="Temporary Password (minimum 6 characters)">
-        <button id="registerStudentBtn">Create Student Account</button>
-        <div id="registerMessage" aria-live="polite"></div>
-      </div>
-      <div class="card">
-        <h2>Create Lecture QR</h2>
-        <label for="lectureDay">Day</label>
-        <select id="lectureDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select>
-        <input id="lectureSubject" placeholder="Subject Name">
-        <input id="lectureName" placeholder="Lecture Name / Number">
-        <button id="createQrBtn">Start QR Attendance</button>
-        <button id="stopQrBtn" class="secondary">Stop QR Attendance</button>
-        <div id="qrBox"></div>
-        <div id="qrMessage" aria-live="polite"></div>
-      </div>
-      <div class="card">
-        <h2>Attendance Report</h2>
-        <button id="loadReportBtn">Load Report</button>
-        <button id="downloadCsvBtn" class="secondary">Download CSV</button>
-        <div id="reportMessage" aria-live="polite"></div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Student</th><th>Student ID</th><th>Subject</th><th>Day</th><th>Lecture</th><th>Date</th><th>Status</th></tr></thead>
-          <tbody id="reportBody"></tbody>
-        </table></div>
-      </div>
-    </section>
-
-    <section id="studentPanel" class="hidden">
-      <div class="card">
-        <h2>Mark Attendance</h2>
-        <p>Staff ने दिलेला चालू QR code scan कर.</p>
-        <div id="reader"></div>
-        <button id="startScannerBtn">Start QR Scanner</button>
-        <button id="stopScannerBtn" class="secondary">Stop Scanner</button>
-        <div id="scanMessage" aria-live="polite"></div>
-      </div>
-    </section>
   </section>
 </main>
 
-<script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDD2IdYl7wyDbDxjoXciMgcalZd25tHGK8",
-  authDomain: "ai-smart-attendance-syst-125d9.firebaseapp.com",
-  projectId: "ai-smart-attendance-syst-125d9",
-  storageBucket: "ai-smart-attendance-syst-125d9.firebasestorage.app",
-  messagingSenderId: "1071824562079",
-  appId: "1:1071824562079:web:5a392380b9aa94e9e07faa"
-};
-const configMissing = Object.values(firebaseConfig).some(v => v.includes("YOUR_"));
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-// दुसरा Auth instance: Staff logout न होता Student account तयार करण्यासाठी.
-const secondaryApp = getApps().find(a => a.name === "StudentAccountCreator")
-  || initializeApp(firebaseConfig, "StudentAccountCreator");
-const secondaryAuth = getAuth(secondaryApp);
-
-let currentProfile = null, activeSessionId = null, qrRefreshTimer = null;
-let html5Scanner = null, scannerRunning = false, lastScannedText = "", reportRows = [];
-
-const $ = id => document.getElementById(id);
-function showMessage(id, text, isError = false) { const el = $(id); el.textContent = text; el.className = "message " + (isError ? "error" : "success"); }
-function clearMessage(id) { $(id).textContent = ""; $(id).className = ""; }
-const studentLoginEmail = sid => sid.trim().toLowerCase() + "@students.attendance.app";
-const validStudentId = sid => /^[a-z0-9._-]{3,30}$/i.test(sid);
-function todayString() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
-function stopQrRefresh() { if (qrRefreshTimer) clearInterval(qrRefreshTimer); qrRefreshTimer = null; }
-async function deactivateSession() {
-  stopQrRefresh();
-  if (activeSessionId) {
-    try { await setDoc(doc(db, "attendanceSessions", activeSessionId), { active: false }, { merge: true }); } catch (_) {}
-    activeSessionId = null;
-  }
-  $("qrBox").innerHTML = "";
-}
-
-$("loginType").addEventListener("change", () => {
-  $("loginId").placeholder = $("loginType").value === "student" ? "Student ID" : "Staff Email";
-  $("loginId").value = ""; $("loginPassword").value = "";
-});
-
-$("loginBtn").addEventListener("click", async () => {
-  clearMessage("loginMessage");
-  if (configMissing) { showMessage("loginMessage", "index.html मधील firebaseConfig मध्ये अजून YOUR_… placeholders आहेत. Firebase Console मधील खरी values टाका.", true); return; }
-  const type = $("loginType").value, enteredId = $("loginId").value.trim(), password = $("loginPassword").value;
-  if (!enteredId || !password) { showMessage("loginMessage", "ID/Email आणि Password भरा.", true); return; }
-  try {
-    const email = type === "student" ? studentLoginEmail(enteredId) : enteredId;
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const snap = await getDoc(doc(db, "users", cred.user.uid));
-    if (!snap.exists()) { await signOut(auth); throw new Error("User profile सापडली नाही (Firestore users document तपासा)."); }
-    const profile = snap.data();
-    if (profile.role !== type) { await signOut(auth); throw new Error("या account चा login type चुकीचा आहे."); }
-    currentProfile = { ...profile, uid: cred.user.uid };
-    $("loginPanel").classList.add("hidden"); $("appPanel").classList.remove("hidden");
-    $("teacherPanel").classList.toggle("hidden", type !== "teacher");
-    $("studentPanel").classList.toggle("hidden", type !== "student");
-    $("welcomeText").textContent = "Welcome, " + (profile.name || profile.email || enteredId);
-  } catch (err) {
-    const bad = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"];
-    showMessage("loginMessage", bad.includes(err.code) ? "ID/Email किंवा Password चुकीचा आहे." : (err.message || "Login failed."), true);
-  }
-});
-
-$("logoutBtn").addEventListener("click", async () => {
-  await deactivateSession();
-  await stopScanner();
-  await signOut(auth);
-  currentProfile = null;
-  $("appPanel").classList.add("hidden"); $("loginPanel").classList.remove("hidden");
-});
-
-// STAFF-ONLY STUDENT ACCOUNT CREATION
-$("registerStudentBtn").addEventListener("click", async () => {
-  clearMessage("registerMessage");
-  if (currentProfile?.role !== "teacher") { showMessage("registerMessage", "फक्त Staff विद्यार्थी नोंदवू शकतो.", true); return; }
-  const name = $("studentName").value.trim(), studentId = $("studentId").value.trim(), password = $("studentPassword").value;
-  if (!name || !studentId || !password) { showMessage("registerMessage", "सर्व माहिती भरा.", true); return; }
-  if (!validStudentId(studentId)) { showMessage("registerMessage", "Student ID मध्ये फक्त अक्षरे, अंक, . _ - (3–30) चालतात.", true); return; }
-  if (password.length < 6) { showMessage("registerMessage", "Password किमान 6 characters चा असावा.", true); return; }
-  const key = studentId.toLowerCase(), email = studentLoginEmail(studentId);
-  try {
-    if ((await getDoc(doc(db, "studentIds", key))).exists()) throw new Error("हा Student ID आधीपासून नोंदलेला आहे.");
-    const created = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-    await setDoc(doc(db, "users", created.user.uid), {
-      name, studentId, email, role: "student", createdBy: currentProfile.uid, createdAt: serverTimestamp()
-    });
-    await setDoc(doc(db, "studentIds", key), { uid: created.user.uid, studentId });
-    await signOut(secondaryAuth);
-    ["studentName", "studentId", "studentPassword"].forEach(i => $(i).value = "");
-    showMessage("registerMessage", "Student account तयार झाले. Student ID आणि Password विद्यार्थ्याला द्या.");
-  } catch (err) {
-    try { await signOut(secondaryAuth); } catch (_) {}
-    showMessage("registerMessage", err.message || "Student registration failed.", true);
-  }
-});
-
-// QR token दर 10 सेकंदांनी बदलतो. Token फक्त sessionSecrets मध्ये राहतो;
-// विद्यार्थी तो वाचू शकत नाहीत - Firestore Rules attendance लिहिताना तपासतात.
-async function refreshQr() {
-  if (!activeSessionId || currentProfile?.role !== "teacher") return;
-  const token = crypto.randomUUID();
-  try {
-    await setDoc(doc(db, "sessionSecrets", activeSessionId), { token, updatedAt: serverTimestamp() });
-    const qr = qrcode(0, "M");
-    qr.addData(JSON.stringify({ sessionId: activeSessionId, token }));
-    qr.make();
-    $("qrBox").innerHTML = "";
-    const img = document.createElement("img");
-    img.id = "qrImage"; img.alt = "Attendance QR Code"; img.src = qr.createDataURL(6, 2);
-    const info = document.createElement("p"); info.textContent = "QR दर 10 सेकंदांनी बदलतो.";
-    $("qrBox").append(img, info);
-  } catch (err) { showMessage("qrMessage", err.message || "QR refresh failed.", true); }
-}
-
-$("createQrBtn").addEventListener("click", async () => {
-  clearMessage("qrMessage");
-  if (currentProfile?.role !== "teacher") return;
-  const day = $("lectureDay").value, subject = $("lectureSubject").value.trim(), lecture = $("lectureName").value.trim();
-  if (!subject || !lecture) { showMessage("qrMessage", "Subject आणि Lecture भरा.", true); return; }
-  try {
-    await deactivateSession();
-    const s = await addDoc(collection(db, "attendanceSessions"), {
-      day, subject, lecture, date: todayString(), teacherUid: currentProfile.uid, active: true, createdAt: serverTimestamp()
-    });
-    activeSessionId = s.id;
-    await refreshQr();
-    qrRefreshTimer = setInterval(refreshQr, 10000);
-    showMessage("qrMessage", "Lecture QR सुरू झाला.");
-  } catch (err) { showMessage("qrMessage", err.message || "QR तयार झाला नाही.", true); }
-});
-
-$("stopQrBtn").addEventListener("click", async () => {
-  await deactivateSession();
-  showMessage("qrMessage", "QR Attendance बंद केली.");
-});
-
-async function onQrScanned(text) {
-  if (currentProfile?.role !== "student" || text === lastScannedText) return;
-  lastScannedText = text;
-  try {
-    const data = JSON.parse(text);
-    if (!data.sessionId || !data.token) throw new Error("QR code योग्य नाही.");
-    const sSnap = await getDoc(doc(db, "attendanceSessions", data.sessionId));
-    if (!sSnap.exists()) throw new Error("Lecture session सापडले नाही.");
-    const s = sSnap.data();
-    if (!s.active) throw new Error("ही Lecture आता बंद आहे.");
-    const ref = doc(db, "attendance", data.sessionId + "_" + currentProfile.uid);
-    if ((await getDoc(ref)).exists()) { showMessage("scanMessage", "या lecture साठी attendance आधीच झाली आहे."); return; }
-    await setDoc(ref, {
-      sessionId: data.sessionId, qrToken: data.token, studentUid: currentProfile.uid,
-      studentId: currentProfile.studentId || "", studentName: currentProfile.name || "",
-      subject: s.subject, day: s.day, lecture: s.lecture, date: s.date,
-      status: "Present", markedAt: serverTimestamp()
-    });
-    showMessage("scanMessage", "Attendance successfully marked!");
-  } catch (err) {
-    showMessage("scanMessage", err.code === "permission-denied"
-      ? "QR expire झाला किंवा Lecture बंद आहे. नवीन QR scan कर."
-      : (err.message || "Attendance mark झाली नाही."), true);
-  } finally { setTimeout(() => { lastScannedText = ""; }, 2000); }
-}
-
-$("startScannerBtn").addEventListener("click", async () => {
-  clearMessage("scanMessage");
-  if (currentProfile?.role !== "student" || scannerRunning) return;
-  try {
-    if (!html5Scanner) html5Scanner = new Html5Qrcode("reader");
-    await html5Scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 230, height: 230 } }, onQrScanned, () => {});
-    scannerRunning = true;
-    showMessage("scanMessage", "Scanner सुरू आहे.");
-  } catch (err) {
-    showMessage("scanMessage", "Camera सुरू झाला नाही. HTTPS site आणि camera permission तपासा. " + (err.message || ""), true);
-  }
-});
-async function stopScanner() {
-  if (html5Scanner && scannerRunning) { try { await html5Scanner.stop(); } catch (_) {} scannerRunning = false; }
-}
-$("stopScannerBtn").addEventListener("click", stopScanner);
-
-$("loadReportBtn").addEventListener("click", async () => {
-  clearMessage("reportMessage");
-  if (currentProfile?.role !== "teacher") return;
-  try {
-    reportRows = (await getDocs(collection(db, "attendance"))).docs.map(d => d.data());
-    const body = $("reportBody"); body.replaceChildren();
-    reportRows.forEach(r => {
-      const tr = document.createElement("tr");
-      [r.studentName, r.studentId, r.subject, r.day, r.lecture, r.date, r.status].forEach(v => {
-        const td = document.createElement("td"); td.textContent = v || ""; tr.appendChild(td);
-      });
-      body.appendChild(tr);
-    });
-    showMessage("reportMessage", reportRows.length + " attendance records मिळाले.");
-  } catch (err) { showMessage("reportMessage", err.message || "Report load झाला नाही.", true); }
-});
-
-$("downloadCsvBtn").addEventListener("click", () => {
-  if (currentProfile?.role !== "teacher") return;
-  // '=', '+', '-', '@' ने सुरू होणाऱ्या values Excel formula बनू नयेत म्हणून ' जोडतो.
-  const cell = v => { v = String(v ?? ""); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
-  const rows = [["Student", "Student ID", "Subject", "Day", "Lecture", "Date", "Status"],
-    ...reportRows.map(r => [r.studentName, r.studentId, r.subject, r.day, r.lecture, r.date, r.status])];
-  const blob = new Blob(["\uFEFF" + rows.map(r => r.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8;" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "attendance-report-" + todayString() + ".csv"; a.click();
-  URL.revokeObjectURL(a.href);
-});
-</script>
 </body>
 </html>

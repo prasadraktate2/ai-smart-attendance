@@ -3,77 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Smart Attendance System</title>
+  <title>AI Smart Attendance - Login</title>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #101b3f, #176b87);
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #123b73, #2563eb);
       padding: 20px;
     }
-    .card {
+    .login-box {
       background: white;
-      padding: 30px;
-      border-radius: 18px;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 10px 35px #0003;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px #0003;
     }
-    h1 { color: #12345a; font-size: 25px; text-align: center; }
-    p { color: #555; text-align: center; }
-    label { display: block; margin: 15px 0 7px; font-weight: bold; }
-    select, input, button {
+    h1 { text-align: center; color: #123b73; font-size: 25px; }
+    p { text-align: center; color: #64748b; }
+    label { display: block; margin: 15px 0 6px; font-weight: bold; }
+    input, select {
       width: 100%;
       padding: 12px;
-      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
       font-size: 16px;
     }
-    select, input { border: 1px solid #bbb; }
     button {
-      margin-top: 20px;
-      background: #1266d5;
-      color: white;
+      width: 100%;
+      margin-top: 22px;
+      padding: 13px;
       border: 0;
+      border-radius: 7px;
+      background: #123b73;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
     }
-    button:hover { background: #084da8; }
-    #message { color: #b42318; font-size: 14px; }
+    #message { color: #b91c1c; font-size: 14px; }
+    .note { font-size: 12px; line-height: 1.5; }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>AI Smart Attendance</h1>
+  <div class="login-box">
+    <h1>🎓 AI Smart Attendance</h1>
     <p>College Attendance Management System</p>
 
     <form id="loginForm">
       <label for="role">Login As</label>
       <select id="role" required>
-        <option value="student">Student</option>
-        <option value="staff">Staff</option>
+        <option value="Student">Student</option>
+        <option value="Staff">Staff</option>
       </select>
 
       <label for="userId">User ID</label>
       <input id="userId" type="text" placeholder="Enter your User ID" required>
 
-      <button type="submit">Continue</button>
-      <p id="message" role="status"></p>
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="Enter password" required>
+
+      <button type="submit">Login</button>
+      <p id="message" role="alert"></p>
     </form>
-  </main>
+
+    <p class="note">
+      Prototype login only. This page does not verify accounts securely.
+      Do not use real passwords or sensitive information.
+    </p>
+  </div>
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", function(event) {
       event.preventDefault();
-      const role = document.getElementById("role").value;
+
       const userId = document.getElementById("userId").value.trim();
+      const password = document.getElementById("password").value;
+      const role = document.getElementById("role").value;
+      const message = document.getElementById("message");
 
-      if (!userId) return;
+      if (!userId || !password) {
+        message.textContent = "Please enter your User ID and password.";
+        return;
+      }
 
-      document.getElementById("message").textContent =
-        "Login page ready. Database authentication will be added in the next part.";
+      // Prototype only — not secure authentication.
+      sessionStorage.setItem("attendanceUser", userId);
+      sessionStorage.setItem("attendanceRole", role);
+
+      window.location.href = "dashboard.html";
     });
   </script>
 </body>

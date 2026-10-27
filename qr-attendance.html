@@ -1,1 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Attendance</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+    .container {
+      max-width: 600px;
+      margin: 25px auto;
+      background: white;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px #00000010;
+      text-align: center;
+    }
+    h1 { color: #123b73; }
+    label { display: block; text-align: left; margin: 14px 0 6px; font-weight: bold; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 16px;
+      background: #123b73;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #qr { margin: 22px auto; }
+    #status { font-weight: bold; overflow-wrap: anywhere; }
+    .note { color: #64748b; font-size: 13px; line-height: 1.5; }
+    a { color: #123b73; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📷 QR Attendance</h1>
+    <p>Generate a classroom attendance QR code</p>
+
+    <label for="subject">Select Subject</label>
+    <select id="subject">
+      <option>Chemistry</option>
+      <option>Engineering Mathematics-I</option>
+      <option>Environmental Science</option>
+      <option>Computational Thinking & Problem Solving</option>
+      <option>Physics</option>
+      <option>Communication</option>
+      <option>Verbal Communication Skills</option>
+      <option>Computer Workshop Practice</option>
+      <option>Introduction to AI Tools</option>
+      <option>Yoga and Meditation</option>
+      <option>Mandatory Course-I</option>
+    </select>
+
+    <label for="lecture">Lecture Number</label>
+    <select id="lecture">
+      <option value="1">Lecture 1</option>
+      <option value="2">Lecture 2</option>
+      <option value="3">Lecture 3</option>
+      <option value="4">Lecture 4</option>
+      <option value="5">Lecture 5</option>
+    </select>
+
+    <button onclick="generateQR()">Generate QR Code</button>
+
+    <div id="qr"></div>
+    <p id="status">Choose a subject to begin.</p>
+    <p class="note">
+      Demo only. QR refreshes every 10 seconds. Without a secure server,
+      students could copy or forge the QR data. This does not record attendance.
+    </p>
+    <p><a href="dashboard.html">← Back to Dashboard</a></p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    let refreshTimer = null;
+    let countdownTimer = null;
+    let expiresAt = 0;
+
+    function generateQR() {
+      if (!window.QRCode) {
+        document.getElementById("status").textContent =
+          "QR library did not load. Check your internet connection.";
+        return;
+      }
+
+      clearInterval(refreshTimer);
+      clearInterval(countdownTimer);
+
+      const role = sessionStorage.getItem("attendanceRole");
+      if (role !== "Staff") {
+        document.getElementById("status").textContent =
+          "Please log in using the Staff option to generate a QR.";
+        return;
+      }
+
+      const subject = document.getElementById("subject").value;
+      const lecture = document.getElementById("lecture").value;
+
+      function refreshCode() {
+        const now = Date.now();
+        expiresAt = now + 10000;
+
+        const payload = {
+          subject: subject,
+          lecture: lecture,
+          createdAt: now,
+          expiresAt: expiresAt
+        };
+
+        document.getElementById("qr").innerHTML = "";
+        new QRCode(document.getElementById("qr"), {
+          text: JSON.stringify(payload),
+          width: 220,
+          height: 220
+        });
+
+        document.getElementById("status").textContent =
+          "QR generated. Refreshes every 10 seconds.";
+      }
+
+      refreshCode();
+
+      refreshTimer = setInterval(refreshCode, 10000);
+
+      countdownTimer = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+        document.getElementById("status").textContent =
+          "QR refreshes in " + remaining + " seconds.";
+      }, 250);
+    }
+  </script>
+</body>
+</html>
 

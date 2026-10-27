@@ -23,6 +23,7 @@
     table { width: 100%; border-collapse: collapse; min-width: 600px; }
     th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
     th { background: #eaf1fb; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
@@ -46,48 +47,83 @@
       </div>
     </div>
 
-    <section class="card" id="staffPanel">
-      <h2>Staff Actions</h2>
+    <section class="card" id="staffPanel" hidden>
+      <h2>Staff Dashboard</h2>
+      <p>Generate the QR code for your lecture.</p>
       <div class="actions">
-        <button class="primary" onclick="showNotice('QR Attendance feature is the next step.')">QR Attendance</button>
-        <button class="green" onclick="downloadCSV()">Download Timetable CSV</button>
+        <button class="primary" onclick="openPage('qr-attendance.html')">
+          Generate QR
+        </button>
+        <button class="green" onclick="downloadCSV()">
+          Download Timetable CSV
+        </button>
       </div>
-      <p id="notice"></p>
+      <p id="notice" class="notice"></p>
     </section>
 
-    <section class="card" id="studentPanel">
+    <section class="card" id="studentPanel" hidden>
       <h2>Student Dashboard</h2>
-      <p>Check your weekly lecture timetable below.</p>
-      <p class="notice">QR scanning will be added in a later step.</p>
+      <p>Scan your teacher's attendance QR using this app.</p>
+      <button class="primary" onclick="openPage('scan-attendance.html')">
+        Scan Attendance
+      </button>
+      <p class="notice">
+        Scan attendance opens inside this website. Camera permission may be required.
+      </p>
     </section>
 
     <section class="card">
       <h2>Weekly Timetable</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Day</th><th>Lecture</th><th>Subject</th><th>Time</th></tr></thead>
+          <thead>
+            <tr><th>Day</th><th>Lecture</th><th>Subject</th><th>Time</th></tr>
+          </thead>
           <tbody id="tableBody"></tbody>
         </table>
       </div>
     </section>
-    <p class="notice">Prototype only. Login and attendance are not securely verified or stored in a permanent database.</p>
+
+    <p class="notice">
+      Prototype only. Login is not securely verified and attendance is not yet
+      stored in a permanent database. Server verification is required for official use.
+    </p>
   </main>
 
   <script>
     const user = sessionStorage.getItem("attendanceUser");
     const role = sessionStorage.getItem("attendanceRole");
 
-    if (!user || !role) {
+    if (!user || !["Student", "Staff"].includes(role)) {
       window.location.href = "index.html";
+    } else {
+      document.getElementById("welcome").textContent = "Welcome, " + user;
+      document.getElementById("roleText").textContent = "Logged in as: " + role;
+
+      if (role === "Staff") {
+        document.getElementById("staffPanel").hidden = false;
+      } else {
+        document.getElementById("studentPanel").hidden = false;
+      }
     }
 
-    document.getElementById("welcome").textContent = "Welcome, " + (user || "User");
-    document.getElementById("roleText").textContent = "Logged in as: " + (role || "Guest");
+    function openPage(page) {
+      if (!user || !["Student", "Staff"].includes(role)) {
+        window.location.href = "index.html";
+        return;
+      }
 
-    if (role === "Student") {
-      document.getElementById("staffPanel").hidden = true;
-    } else {
-      document.getElementById("studentPanel").hidden = true;
+      if (page === "qr-attendance.html" && role !== "Staff") {
+        alert("Please log in as Staff to generate a QR.");
+        return;
+      }
+
+      if (page === "scan-attendance.html" && role !== "Student") {
+        alert("Please log in as Student to scan attendance.");
+        return;
+      }
+
+      window.location.href = page;
     }
 
     const schedule = [
@@ -117,19 +153,21 @@
     ];
 
     document.getElementById("tableBody").innerHTML = schedule.map(row =>
-      "<tr>" + row.map(value => "<td>" + value + "</td>").join("") + "</tr>"
+      "<tr>" + row.map(value => "<td>" + String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;") + "</td>").join("") + "</tr>"
     ).join("");
-
-    function showNotice(text) {
-      document.getElementById("notice").textContent = text;
-    }
 
     function downloadCSV() {
       const rows = [["Day","Lecture","Subject","Time"], ...schedule];
       const csv = rows.map(row => row.map(value =>
         '"' + String(value).replace(/"/g, '""') + '"'
       ).join(",")).join("\r\n");
-      const blob = new Blob(["\uFEFF" + csv], {type:"text/csv;charset=utf-8;"});
+
+      const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;"
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -145,4 +183,3 @@
   </script>
 </body>
 </html>
-

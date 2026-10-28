@@ -1,207 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Smart Attendance Dashboard</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f1f5f9;
-      color: #172033;
-    }
-    header {
-      background: #123b73;
-      color: white;
-      padding: 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    header h2 { margin: 0; }
-    button {
-      padding: 12px 16px;
-      border: 0;
-      border-radius: 7px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .logout { background: white; color: #123b73; }
-    main { max-width: 1000px; margin: auto; padding: 20px; }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 18px;
-      box-shadow: 0 3px 12px #0000000d;
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 15px;
-    }
-    .number { color: #123b73; font-size: 27px; font-weight: bold; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .primary { background: #123b73; color: white; }
-    .green { background: #15803d; color: white; }
-    .notice { color: #64748b; font-size: 13px; line-height: 1.5; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
-    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
-    th { background: #eaf1fb; }
-    [hidden] { display: none !important; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Smart Attendance Dashboard</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f5f9;
+  color: #172033;
+}
+header {
+  background: #123b73;
+  color: white;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+header h2 { margin: 0; }
+button {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  touch-action: manipulation;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.logout { background: white; color: #123b73; }
+main { max-width: 1000px; margin: auto; padding: 20px; }
+.card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 12px #0000000d;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+.number { color: #123b73; font-size: 27px; font-weight: bold; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.primary { background: #123b73; color: white; }
+.green { background: #15803d; color: white; }
+.notice { color: #64748b; font-size: 13px; line-height: 1.5; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+th { background: #eaf1fb; }
+[hidden] { display: none !important; }
+</style>
 </head>
 <body>
-  <header>
-    <h2>🎓 AI Smart Attendance</h2>
-    <button class="logout" onclick="logout()">Logout</button>
-  </header>
+<header>
+  <h2>🎓 AI Smart Attendance</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+</header>
 
-  <main>
-    <h1 id="welcome">Dashboard</h1>
-    <p id="roleText"></p>
-    <p id="message" class="notice"></p>
+<main>
+  <h1 id="welcome">Dashboard</h1>
+  <p id="roleText"></p>
+  <p id="message" class="notice"></p>
 
-    <div class="cards">
-      <div class="card">
-        <h3>Total Students</h3>
-        <div class="number">106</div>
-      </div>
-      <div class="card">
-        <h3>Attendance Marked</h3>
-        <div class="number" id="count">0</div>
-      </div>
+  <div class="cards">
+    <div class="card">
+      <h3>Total Students</h3>
+      <div class="number">106</div>
     </div>
+    <div class="card">
+      <h3>Attendance Marked</h3>
+      <div class="number" id="count">0</div>
+    </div>
+  </div>
 
-    <section class="card" id="staffPanel" hidden>
-      <h2>Staff Dashboard</h2>
-      <p>Generate the QR code for your lecture.</p>
-      <div class="actions">
-        <button class="primary" onclick="openPage('qr-attendance.html')">
-          Generate QR
-        </button>
-        <button class="green" onclick="downloadCSV()">
-          Download Timetable CSV
-        </button>
-      </div>
-    </section>
+  <section class="card" id="staffPanel" hidden>
+    <h2>Staff Dashboard</h2>
+    <p>Generate the QR code for your lecture.</p>
+    <div class="actions">
+      <button type="button" class="primary" onclick="openPage('qr-attendance.html')">Generate QR</button>
+      <button type="button" class="green" onclick="downloadCSV()">Download Timetable CSV</button>
+    </div>
+  </section>
 
-    <section class="card" id="studentPanel" hidden>
-      <h2>Student Dashboard</h2>
-      <p>Scan your teacher's attendance QR using this app.</p>
-      <button class="primary" onclick="openPage('scan-attendance.html')">
-        Scan Attendance
-      </button>
-      <p class="notice">Camera permission may be required to scan.</p>
-    </section>
+  <section class="card" id="studentPanel" hidden>
+    <h2>Student Dashboard</h2>
+    <p>Scan your teacher's attendance QR using this app.</p>
+    <button type="button" class="primary" onclick="openPage('scan-attendance.html')">Scan Attendance</button>
+    <p class="notice">Camera permission may be required to scan.</p>
+  </section>
 
-    <section class="card">
-      <h2>Weekly Timetable</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Day</th><th>Lecture</th><th>Subject</th><th>Time</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-    </section>
+  <section class="card">
+    <h2>Weekly Timetable</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Day</th><th>Lecture</th><th>Subject</th><th>Time</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
 
-    <p class="notice">
-      Prototype only. Login is not securely verified and attendance is not
-      stored in a permanent database.
-    </p>
-  </main>
+  <p class="notice">Prototype only. Login is not securely verified and attendance is not stored in a permanent database.</p>
+</main>
 
-  <script>
-    const user = sessionStorage.getItem("attendanceUser");
-    const role = (sessionStorage.getItem("attendanceRole") || "")
-      .trim().toLowerCase();
+<script>
+const user = sessionStorage.getItem("attendanceUser");
+const role = (sessionStorage.getItem("attendanceRole") || "").trim().toLowerCase();
 
-    if (!user || !["student", "staff"].includes(role)) {
-      window.location.replace("index.html");
-    } else {
-      document.getElementById("welcome").textContent = "Welcome, " + user;
-      document.getElementById("roleText").textContent =
-        "Logged in as: " + (role === "staff" ? "Staff" : "Student");
+if (!user || !["student", "staff"].includes(role)) {
+  window.location.replace("index.html");
+} else {
+  document.getElementById("welcome").textContent = "Welcome, " + user;
+  document.getElementById("roleText").textContent =
+    "Logged in as: " + (role === "staff" ? "Staff" : "Student");
+  document.getElementById("staffPanel").hidden = role !== "staff";
+  document.getElementById("studentPanel").hidden = role !== "student";
+}
 
-      document.getElementById("staffPanel").hidden = role !== "staff";
-      document.getElementById("studentPanel").hidden = role !== "student";
-    }
+function openPage(page) {
+  if (role === "staff" && page === "qr-attendance.html") {
+    window.location.href = "./qr-attendance.html";
+  } else if (role === "student" && page === "scan-attendance.html") {
+    window.location.href = "./scan-attendance.html";
+  } else {
+    alert("You are not allowed to open this page with your current role.");
+  }
+}
 
-    function openPage(page) {
-      if (role === "staff" && page === "qr-attendance.html") {
-        window.location.href = "./qr-attendance.html";
-      } else if (role === "student" && page === "scan-attendance.html") {
-        window.location.href = "./scan-attendance.html";
-      } else {
-        alert("You are not allowed to open this page with your current role.");
-      }
-    }
+const schedule = [
+["Monday",1,"Chemistry","10:00–10:50"],
+["Monday",2,"Engineering Mathematics-I","10:50–11:50"],
+["Monday",3,"Verbal Communication Skills","12:30–2:30"],
+["Monday",4,"Chemistry","2:50–4:50"],
+["Tuesday",1,"Environmental Science","10:00–10:50"],
+["Tuesday",2,"Engineering Mathematics-I","10:50–11:50"],
+["Tuesday",3,"Computational Thinking & Problem Solving","12:30–2:30"],
+["Tuesday",4,"Computational Thinking & Problem Solving","2:50–3:50"],
+["Tuesday",5,"Physics","3:50–4:50"],
+["Wednesday",1,"Communication","10:00–10:50"],
+["Wednesday",2,"Chemistry","10:50–11:50"],
+["Wednesday",3,"Computational Thinking & Problem Solving","12:30–1:30"],
+["Wednesday",4,"Engineering Mathematics-I","1:30–2:30"],
+["Wednesday",5,"Yoga and Meditation","2:30–4:50"],
+["Thursday",1,"Physics","Time to be confirmed"],
+["Thursday",2,"Environmental Science","10:55–11:50"],
+["Thursday",3,"Computer Workshop Practice","12:30–2:30"],
+["Thursday",4,"Computer Workshop Practice","2:50–4:50"],
+["Friday",1,"Engineering Mathematics-I","10:00–10:55"],
+["Friday",2,"Computational Thinking & Problem Solving","10:55–11:50"],
+["Friday",3,"Computer Workshop Practice","12:30–2:30"],
+["Friday",4,"Introduction to AI Tools","2:50–4:50"],
+["Saturday",1,"Mandatory Course-I","2:50–4:50"]
+];
 
-    const schedule = [
-      ["Monday",1,"Chemistry","10:00–10:50"],
-      ["Monday",2,"Engineering Mathematics-I","10:50–11:50"],
-      ["Monday",3,"Verbal Communication Skills","12:30–2:30"],
-      ["Monday",4,"Chemistry","2:50–4:50"],
-      ["Tuesday",1,"Environmental Science","10:00–10:50"],
-      ["Tuesday",2,"Engineering Mathematics-I","10:50–11:50"],
-      ["Tuesday",3,"Computational Thinking & Problem Solving","12:30–2:30"],
-      ["Tuesday",4,"Computational Thinking & Problem Solving","2:50–3:50"],
-      ["Tuesday",5,"Physics","3:50–4:50"],
-      ["Wednesday",1,"Communication","10:00–10:50"],
-      ["Wednesday",2,"Chemistry","10:50–11:50"],
-      ["Wednesday",3,"Computational Thinking & Problem Solving","12:30–1:30"],
-      ["Wednesday",4,"Engineering Mathematics-I","1:30–2:30"],
-      ["Wednesday",5,"Yoga and Meditation","2:30–4:50"],
-      ["Thursday",1,"Physics","Time to be confirmed"],
-      ["Thursday",2,"Environmental Science","10:55–11:50"],
-      ["Thursday",3,"Computer Workshop Practice","12:30–2:30"],
-      ["Thursday",4,"Computer Workshop Practice","2:50–4:50"],
-      ["Friday",1,"Engineering Mathematics-I","10:00–10:55"],
-      ["Friday",2,"Computational Thinking & Problem Solving","10:55–11:50"],
-      ["Friday",3,"Computer Workshop Practice","12:30–2:30"],
-      ["Friday",4,"Introduction to AI Tools","2:50–4:50"],
-      ["Saturday",1,"Mandatory Course-I","2:50–4:50"]
-    ];
+document.getElementById("tableBody").innerHTML = schedule.map(row =>
+  "<tr>" + row.map(value =>
+    "<td>" + String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;") + "</td>"
+  ).join("") + "</tr>"
+).join("");
 
-    document.getElementById("tableBody").innerHTML = schedule.map(row =>
-      "<tr>" + row.map(value =>
-        "<td>" + String(value)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;") + "</td>"
-      ).join("") + "</tr>"
-    ).join("");
+function downloadCSV() {
+  const rows = [["Day","Lecture","Subject","Time"], ...schedule];
+  const csv = rows.map(row => row.map(value =>
+    '"' + String(value).replace(/"/g, '""') + '"'
+  ).join(",")).join("\r\n");
+  const blob = new Blob(["\uFEFF" + csv], {type: "text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "weekly-timetable.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
-    function downloadCSV() {
-      const rows = [["Day","Lecture","Subject","Time"], ...schedule];
-      const csv = rows.map(row => row.map(value =>
-        '"' + String(value).replace(/"/g, '""') + '"'
-      ).join(",")).join("\r\n");
-
-      const blob = new Blob(["\uFEFF" + csv], {
-        type: "text/csv;charset=utf-8;"
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "weekly-timetable.csv";
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-
-    function logout() {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    }
-  </script>
+function logout() {
+  sessionStorage.clear();
+  window.location.href = "index.html";
+}
+</script>
 </body>
 </html>

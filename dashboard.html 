@@ -6,14 +6,44 @@
   <title>AI Smart Attendance Dashboard</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, sans-serif; background: #f1f5f9; color: #172033; }
-    header { background: #123b73; color: white; padding: 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+    header {
+      background: #123b73;
+      color: white;
+      padding: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     header h2 { margin: 0; }
-    button { padding: 11px 15px; border: 0; border-radius: 7px; cursor: pointer; font-weight: bold; }
+    button {
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: bold;
+    }
     .logout { background: white; color: #123b73; }
     main { max-width: 1000px; margin: auto; padding: 20px; }
-    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 18px; box-shadow: 0 3px 12px #0000000d; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 15px; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 3px 12px #0000000d;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+    }
     .number { color: #123b73; font-size: 27px; font-weight: bold; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .primary { background: #123b73; color: white; }
@@ -35,6 +65,7 @@
   <main>
     <h1 id="welcome">Dashboard</h1>
     <p id="roleText"></p>
+    <p id="message" class="notice"></p>
 
     <div class="cards">
       <div class="card">
@@ -58,7 +89,6 @@
           Download Timetable CSV
         </button>
       </div>
-      <p id="notice" class="notice"></p>
     </section>
 
     <section class="card" id="studentPanel" hidden>
@@ -67,9 +97,7 @@
       <button class="primary" onclick="openPage('scan-attendance.html')">
         Scan Attendance
       </button>
-      <p class="notice">
-        Scan attendance opens inside this website. Camera permission may be required.
-      </p>
+      <p class="notice">Camera permission may be required to scan.</p>
     </section>
 
     <section class="card">
@@ -77,7 +105,9 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Day</th><th>Lecture</th><th>Subject</th><th>Time</th></tr>
+            <tr>
+              <th>Day</th><th>Lecture</th><th>Subject</th><th>Time</th>
+            </tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
@@ -85,45 +115,35 @@
     </section>
 
     <p class="notice">
-      Prototype only. Login is not securely verified and attendance is not yet
-      stored in a permanent database. Server verification is required for official use.
+      Prototype only. Login is not securely verified and attendance is not
+      stored in a permanent database.
     </p>
   </main>
 
   <script>
     const user = sessionStorage.getItem("attendanceUser");
-    const role = sessionStorage.getItem("attendanceRole");
+    const role = (sessionStorage.getItem("attendanceRole") || "")
+      .trim().toLowerCase();
 
-    if (!user || !["Student", "Staff"].includes(role)) {
-      window.location.href = "index.html";
+    if (!user || !["student", "staff"].includes(role)) {
+      window.location.replace("index.html");
     } else {
       document.getElementById("welcome").textContent = "Welcome, " + user;
-      document.getElementById("roleText").textContent = "Logged in as: " + role;
+      document.getElementById("roleText").textContent =
+        "Logged in as: " + (role === "staff" ? "Staff" : "Student");
 
-      if (role === "Staff") {
-        document.getElementById("staffPanel").hidden = false;
-      } else {
-        document.getElementById("studentPanel").hidden = false;
-      }
+      document.getElementById("staffPanel").hidden = role !== "staff";
+      document.getElementById("studentPanel").hidden = role !== "student";
     }
 
     function openPage(page) {
-      if (!user || !["Student", "Staff"].includes(role)) {
-        window.location.href = "index.html";
-        return;
+      if (role === "staff" && page === "qr-attendance.html") {
+        window.location.href = "./qr-attendance.html";
+      } else if (role === "student" && page === "scan-attendance.html") {
+        window.location.href = "./scan-attendance.html";
+      } else {
+        alert("You are not allowed to open this page with your current role.");
       }
-
-      if (page === "qr-attendance.html" && role !== "Staff") {
-        alert("Please log in as Staff to generate a QR.");
-        return;
-      }
-
-      if (page === "scan-attendance.html" && role !== "Student") {
-        alert("Please log in as Student to scan attendance.");
-        return;
-      }
-
-      window.location.href = page;
     }
 
     const schedule = [
@@ -153,10 +173,12 @@
     ];
 
     document.getElementById("tableBody").innerHTML = schedule.map(row =>
-      "<tr>" + row.map(value => "<td>" + String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;") + "</td>").join("") + "</tr>"
+      "<tr>" + row.map(value =>
+        "<td>" + String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;") + "</td>"
+      ).join("") + "</tr>"
     ).join("");
 
     function downloadCSV() {
@@ -173,7 +195,7 @@
       link.href = url;
       link.download = "weekly-timetable.csv";
       link.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     function logout() {

@@ -1,20 +1,23 @@
 function login() {
   const id = document.getElementById('userId').value.trim();
   const name = document.getElementById('userName').value.trim();
-  const role = document.getElementById('role').value;
+  const role = document.getElementById('role').value.trim().toLowerCase();
+
+  const message = document.getElementById('loginMessage');
 
   if (!id || !name) {
-    document.getElementById('loginMessage').textContent =
-      'Please enter your ID and full name.';
+    message.textContent = 'Please enter your ID and full name.';
     return;
   }
 
-  currentUser = { id, name, role };
+  if (role !== 'staff' && role !== 'student') {
+    message.textContent = 'Please select Staff or Student.';
+    return;
+  }
 
-  // Share login details with dashboard.html
   sessionStorage.setItem('attendanceUser', name);
   sessionStorage.setItem('attendanceRole', role);
   sessionStorage.setItem('attendanceUserId', id);
 
-  window.location.href = 'dashboard.html';
+  window.location.href = './dashboard.html';
 }
